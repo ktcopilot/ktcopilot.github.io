@@ -19,7 +19,7 @@ locale                   : "en-US"
 rtl                      : # true, false (default) # turns direction of the page into right to left for RTL languages
 title                    : "KT Knowledge Hub"
 title_separator          : "|"
-subtitle                 : # site tagline that appears below site title in masthead
+subtitle                 : AX를 업무에 적용할 수 있는 지식 저장소
 name                     : "AX Education Team"
 description              : "코파일럿과 애저 기반 업무 활용"
 url                      : "https://ktcopilot.github.io"
