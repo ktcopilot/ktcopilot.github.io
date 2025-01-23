@@ -226,7 +226,7 @@ sass:
 
 
 # Outputting
-permalink: /:categories/:title/
+permalink: /:categories/:year/:month/:day/:title/
 timezone: Asia/Seoul
 
 
@@ -329,4 +329,14 @@ defaults:
       toc_label: "목차"
     
 date_format: "%Y-%m-%d"
+
+
+# 카테고리를 포함한 URL 구조
+permalink: /:categories/:title/
+
+# 또는 년월일을 포함한 구조
+permalink: /:year/:month/:day/:title/
+
+# 또는 카테고리와 년월일 모두 포함
+permalink: /:categories/:year/:month/:day/:title/
 
