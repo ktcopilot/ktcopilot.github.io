@@ -7,3 +7,111 @@ search: false
 
 @import "minimal-mistakes/skins/{{ site.minimal_mistakes_skin | default: 'default' }}"; // skin
 @import "minimal-mistakes"; // main partials
+
+.quiz-wrapper {
+    max-width: 800px;
+    margin: 2em auto;
+    padding: 1em;
+  
+    .quiz-controls {
+      margin-bottom: 2em;
+      display: flex;
+      gap: 1em;
+      align-items: center;
+  
+      select {
+        padding: 0.5em;
+        border-radius: 4px;
+        border: 1px solid #ddd;
+        min-width: 200px;
+      }
+    }
+  
+    .quiz-button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 0.8em 1.5em;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 0.5em 0;
+      
+      &:hover {
+        background: #0056b3;
+      }
+  
+      &:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+      }
+    }
+  
+    #new-quiz {
+      background: #28a745;
+      
+      &:hover {
+        background: #218838;
+      }
+    }
+  
+    .quiz-question {
+      font-size: 1.2em;
+      font-weight: bold;
+      margin-bottom: 1.5em;
+      padding: 1em;
+      background: #f8f9fa;
+      border-radius: 4px;
+    }
+  
+    .quiz-options {
+      display: flex;
+      flex-direction: column;
+      gap: 1em;
+      margin-bottom: 1.5em;
+  
+      label {
+        display: block;
+        padding: 1em;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+  
+        &:hover {
+          background: #f8f9fa;
+        }
+      }
+    }
+  
+    #quiz-result {
+      margin-top: 2em;
+      padding: 1em;
+      border-radius: 4px;
+  
+      &.notice--success {
+        background: #d4edda;
+        border-color: #c3e6cb;
+      }
+  
+      &.notice--danger {
+        background: #f8d7da;
+        border-color: #f5c6cb;
+      }
+    }
+  
+    .related-posts {
+      margin-top: 1em;
+      padding-top: 1em;
+      border-top: 1px solid #ddd;
+  
+      ul {
+        list-style: none;
+        padding: 0;
+      }
+  
+      li {
+        margin: 0.5em 0;
+      }
+    }
+  }

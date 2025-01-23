@@ -1,0 +1,43 @@
+---
+layout: default
+---
+
+<head>
+  <meta name="gemini-api-key" content="{{ site.gemini_api.key }}">
+  <meta name="gemini-api-endpoint" content="{{ site.gemini_api.endpoint }}">
+</head>
+
+<div id="main" role="main">
+  <div class="quiz-wrapper">
+    <h1>Learning Quiz</h1>
+    
+    <div class="quiz-controls">
+      <select id="category-select">
+        <option value="">All Categories</option>
+        {% for category in site.categories %}
+          <option value="{{ category[0] }}">{{ category[0] }}</option>
+        {% endfor %}
+      </select>
+      <button id="generate-quiz" class="quiz-button">Generate New Quiz</button>
+    </div>
+    
+    <div id="quiz-container" style="display: none;">
+      <div class="quiz-question"></div>
+      <div class="quiz-options"></div>
+      <button id="check-answer" class="quiz-button">Check Answer</button>
+      
+      <div id="quiz-result" style="display: none;">
+        <div class="result-message"></div>
+        <div class="explanation"></div>
+        <div class="related-posts">
+          <h3>Related Posts</h3>
+          <ul></ul>
+        </div>
+      </div>
+    </div>
+    
+    <div id="error-message" class="notice notice--danger" style="display: none;"></div>
+  </div>
+</div>
+
+<script src="{{ '/assets/js/quiz.js' | relative_url }}"></script>

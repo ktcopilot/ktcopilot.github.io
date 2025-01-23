@@ -165,6 +165,7 @@ footer:
 include:
   - .htaccess
   - _pages
+  - api
 exclude:
   - "*.sublime-project"
   - "*.sublime-workspace"
@@ -329,4 +330,9 @@ defaults:
       toc_label: "목차"
     
 date_format: "%Y-%m-%d"
+
+# Gemini API 설정
+gemini_api:
+  key: "AIzaSyASPd5qXjOJk9w8H8DksyaWyKlKfw1SBFI"
+  endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent"
 
