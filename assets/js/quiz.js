@@ -8,6 +8,8 @@ class QuizGenerator {
       this.apiEndpoint = document.querySelector('meta[name="gemini-api-endpoint"]').content;
       this.posts = [];
       this.currentQuiz = null;
+      this.currentQuizIndex = 0;
+      this.quizzes = [];
       
       this.initializeEvents();
       this.loadPosts();
@@ -60,25 +62,33 @@ class QuizGenerator {
 
   async generateQuiz() {
     try {
+      const loadingIndicator = document.getElementById('loading-indicator');
+      loadingIndicator.style.display = 'block';
+      
       const filteredPosts = this.getPostsByCategory();
       if (!filteredPosts || filteredPosts.length === 0) {
         throw new Error('사용 가능한 포스트가 없습니다.');
       }
 
       const randomPost = filteredPosts[Math.floor(Math.random() * filteredPosts.length)];
-      const prompt = `다음 내용을 바탕으로 4개의 선택지를 가진 퀴즈를 만들어주세요:
+      const prompt = `다음 내용을 바탕으로 5개의 퀴즈를 만들어주세요:
 ${randomPost.content}
 
 반드시 다음 JSON 형식으로만 응답해주세요:
 {
-  "question": "한글로 된 질문",
-  "options": ["선택지1", "선택지2", "선택지3", "선택지4"],
-  "correct": 0,
-  "explanation": "한글로 된 정답 설명"
+  "quizzes": [
+    {
+      "question": "한글로 된 질문",
+      "options": ["선택지1", "선택지2", "선택지3", "선택지4"],
+      "correct": 0,
+      "explanation": "한글로 된 정답 설명"
+    }
+  ]
 }
 
 주의사항:
-- 반드시 4개의 선택지를 만들어주세요
+- 반드시 5개의 퀴즈를 만들어주세요
+- 각 퀴즈는 4개의 선택지를 가져야 합니다
 - correct는 0-3 사이의 숫자여야 합니다
 - 모든 텍스트는 한글로 작성해주세요`;
 
@@ -111,27 +121,31 @@ ${randomPost.content}
 
       // JSON 문자열 정제
       generatedContent = generatedContent
-        .replace(/```json\s*|\s*```/g, '')  // JSON 코드 블록 마커 제거
-        .replace(/[\u201C\u201D\u2018\u2019]/g, '"')  // 스마트 따옴표를 일반 따옴표로 변환
-        .replace(/\n/g, ' ')  // 줄바꿈 제거
+        .replace(/```json\s*|\s*```/g, '')
+        .replace(/[\u201C\u201D\u2018\u2019]/g, '"')
+        .replace(/\n/g, ' ')
         .trim();
 
       try {
         const parsedQuiz = JSON.parse(generatedContent);
         
-        // 퀴즈 데이터 검증
         if (!this.validateQuiz(parsedQuiz)) {
           throw new Error('잘못된 퀴즈 형식');
         }
 
-        this.currentQuiz = {
-          ...parsedQuiz,
+        this.quizzes = parsedQuiz.quizzes;
+        this.currentQuizIndex = 0;
+        
+        // 모든 퀴즈에 relatedPost 정보 추가
+        this.quizzes = this.quizzes.map(quiz => ({
+          ...quiz,
           relatedPost: {
             title: randomPost.title,
             url: randomPost.url
           }
-        };
+        }));
 
+        this.currentQuiz = this.quizzes[this.currentQuizIndex];
         this.displayQuiz();
       } catch (parseError) {
         console.error('JSON Parse Error:', parseError);
@@ -141,37 +155,47 @@ ${randomPost.content}
     } catch (error) {
       console.error('Quiz generation failed:', error);
       this.showError(`퀴즈 생성 실패: ${error.message}`);
+    } finally {
+      const loadingIndicator = document.getElementById('loading-indicator');
+      loadingIndicator.style.display = 'none';
     }
   }
 
   validateQuiz(quiz) {
     try {
-      if (!quiz.question || typeof quiz.question !== 'string') {
-        console.error('Invalid question format');
+      if (!quiz.quizzes || !Array.isArray(quiz.quizzes) || quiz.quizzes.length !== 5) {
+        console.error('Quiz must contain exactly 5 questions');
         return false;
       }
-      
-      if (!Array.isArray(quiz.options) || quiz.options.length !== 4) {
-        console.error('Options must be an array of exactly 4 items');
-        return false;
-      }
-      
-      if (quiz.options.some(option => !option || typeof option !== 'string')) {
-        console.error('All options must be non-empty strings');
-        return false;
-      }
-      
-      if (typeof quiz.correct !== 'number' || quiz.correct < 0 || quiz.correct > 3) {
-        console.error('Correct answer must be a number between 0 and 3');
-        return false;
-      }
-      
-      if (!quiz.explanation || typeof quiz.explanation !== 'string') {
-        console.error('Invalid explanation format');
-        return false;
-      }
-      
-      return true;
+
+      return quiz.quizzes.every(q => {
+        if (!q.question || typeof q.question !== 'string') {
+          console.error('Invalid question format');
+          return false;
+        }
+        
+        if (!Array.isArray(q.options) || q.options.length !== 4) {
+          console.error('Options must be an array of exactly 4 items');
+          return false;
+        }
+        
+        if (q.options.some(option => !option || typeof option !== 'string')) {
+          console.error('All options must be non-empty strings');
+          return false;
+        }
+        
+        if (typeof q.correct !== 'number' || q.correct < 0 || q.correct > 3) {
+          console.error('Correct answer must be a number between 0 and 3');
+          return false;
+        }
+        
+        if (!q.explanation || typeof q.explanation !== 'string') {
+          console.error('Invalid explanation format');
+          return false;
+        }
+        
+        return true;
+      });
     } catch (error) {
       console.error('Quiz validation error:', error);
       return false;
@@ -185,8 +209,8 @@ ${randomPost.content}
       return;
     }
 
-    // 기존 퀴즈 내용 초기화
     container.innerHTML = `
+      <div class="quiz-progress">문제 ${this.currentQuizIndex + 1} / 5</div>
       <div class="quiz-question"></div>
       <div class="quiz-options"></div>
       <button id="check-answer" class="quiz-button">정답 확인</button>
@@ -198,9 +222,10 @@ ${randomPost.content}
           <ul></ul>
         </div>
       </div>
-      <button id="new-quiz" class="quiz-button" style="margin-top: 1em;">
-        다른 퀴즈 풀기
-      </button>
+      ${this.currentQuizIndex < 4 ? 
+        '<button id="next-quiz" class="quiz-button" style="margin-top: 1em; display: none;">다음 문제</button>' :
+        '<button id="generate-new-quiz" class="quiz-button" style="margin-top: 1em; display: none;">새 퀴즈 생성</button>'
+      }
     `;
 
     const questionDiv = container.querySelector('.quiz-question');
@@ -216,10 +241,6 @@ ${randomPost.content}
         </label>
       `).join('');
 
-      // 이벤트 리스너 추가
-      document.getElementById('check-answer').addEventListener('click', () => this.checkAnswer());
-      document.getElementById('new-quiz').addEventListener('click', () => this.generateQuiz());
-      
       container.style.display = 'block';
     }
   }
@@ -243,20 +264,52 @@ ${randomPost.content}
         <p>설명: ${this.currentQuiz.explanation}</p>
         <div class="related-posts">
           <h3>관련 포스트</h3>
-          <p><a href="${this.currentQuiz.relatedPost.url}">${this.currentQuiz.relatedPost.title}</a></p>
+          <p><a href="${this.currentQuiz.relatedPost.url}" target="_blank">${this.currentQuiz.relatedPost.title}</a></p>
         </div>
       </div>
     `;
 
     result.style.display = 'block';
+    
+    // 정답 확인 버튼 숨기기
+    const checkAnswerButton = document.getElementById('check-answer');
+    if (checkAnswerButton) {
+      checkAnswerButton.style.display = 'none';
+    }
+
+    // 다음 문제 또는 새 퀴즈 생성 버튼 표시
+    const nextButton = document.getElementById('next-quiz');
+    const newQuizButton = document.getElementById('generate-new-quiz');
+    
+    if (nextButton) {
+      nextButton.style.display = 'block';
+    }
+    if (newQuizButton) {
+      newQuizButton.style.display = 'block';
+    }
+
+    // 라디오 버튼 비활성화
+    const radioButtons = document.querySelectorAll('input[name="quiz"]');
+    radioButtons.forEach(radio => {
+      radio.disabled = true;
+    });
   }
 
   initializeEvents() {
-    document.getElementById('generate-quiz')
-      .addEventListener('click', () => this.generateQuiz());
-    
-    document.getElementById('check-answer')
-      .addEventListener('click', () => this.checkAnswer());
+    const generateButton = document.getElementById('generate-quiz');
+    if (generateButton) {
+      generateButton.addEventListener('click', () => this.generateQuiz());
+    }
+
+    document.addEventListener('click', (e) => {
+      if (e.target.id === 'check-answer') {
+        this.checkAnswer();
+      } else if (e.target.id === 'next-quiz') {
+        this.nextQuiz();
+      } else if (e.target.id === 'generate-new-quiz') {
+        this.generateQuiz();
+      }
+    });
   }
 
   showError(message) {
@@ -271,20 +324,24 @@ ${randomPost.content}
   }
 
   getPostsByCategory() {
-    if (!this.selectedCategory || this.selectedCategory === '') {
-      return this.posts;
-    }
-    
-    const filteredPosts = this.posts.filter(post => {
+    return this.posts.filter(post => {
       return post.categories && 
              Array.isArray(post.categories) && 
-             post.categories.some(cat => 
-               cat.toLowerCase() === this.selectedCategory.toLowerCase()
-             );
+             post.categories.includes('테크뉴런');
     });
-    
-    console.log(`Found ${filteredPosts.length} posts for category: ${this.selectedCategory}`);
-    return filteredPosts;
+  }
+
+  nextQuiz() {
+    if (this.currentQuizIndex < 4) {
+      this.currentQuizIndex++;
+      this.currentQuiz = this.quizzes[this.currentQuizIndex];
+      this.displayQuiz();
+    }
+  }
+
+  finishQuiz() {
+    this.currentQuizIndex = 0;
+    this.generateQuiz();
   }
 }
 

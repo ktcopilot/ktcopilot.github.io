@@ -12,12 +12,6 @@ layout: default
     <h1>Learning Quiz</h1>
     
     <div class="quiz-controls">
-      <select id="category-select">
-        <option value="">All Categories</option>
-        {% for category in site.categories %}
-          <option value="{{ category[0] }}">{{ category[0] }}</option>
-        {% endfor %}
-      </select>
       <button id="generate-quiz" class="quiz-button">Generate New Quiz</button>
     </div>
     
@@ -37,7 +31,34 @@ layout: default
     </div>
     
     <div id="error-message" class="notice notice--danger" style="display: none;"></div>
+
+    <div id="loading-indicator" style="display: none;">
+      <div class="loading-spinner"></div>
+      <p>퀴즈를 생성하고 있습니다...</p>
+    </div>
   </div>
 </div>
+
+<style>
+.loading-spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid #f3f3f3;
+  border-top: 5px solid #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 20px auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+#loading-indicator {
+  text-align: center;
+  padding: 20px;
+}
+</style>
 
 <script src="{{ '/assets/js/quiz.js' | relative_url }}"></script>
