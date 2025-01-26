@@ -99,4 +99,8 @@ def main():
             chat_context = [msg for _, msg in st.session_state.chat_history]
             response = get_gemini_response(user_input, chat_context)
             
-            st.session_state.chat_history.
+            st.session_state.chat_history.append(("assistant", response))
+            st.experimental_rerun()
+
+if __name__ == "__main__":
+    main() 
