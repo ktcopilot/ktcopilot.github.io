@@ -43,10 +43,24 @@ def get_chatbot_response(model, prompt, chat_history):
         response = model.generate_content(full_prompt)
         return response.text
     except Exception as e:
-        return f"죄송합니다. 응답을 생성하는 중에 오류가 발생했습니다: {str(e)}"
+        st.error(f"API Error: {str(e)}")
+        if hasattr(e, 'response'):
+            st.error(f"Response Status: {e.response.status_code}")
+            st.error(f"Response Body: {e.response.text}")
+        return "죄송합니다. API 호출 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요."
 
 def main():
     st.title("Azure 학습 경로 상담 챗봇 💬")
+    
+    # Show API key status
+    api_key = load_api_key()
+    if api_key:
+        st.sidebar.success("API 키가 설정되었습니다.")
+        # Show first and last 4 characters of API key
+        masked_key = f"{api_key[:4]}...{api_key[-4:]}"
+        st.sidebar.text(f"API Key: {masked_key}")
+    else:
+        st.sidebar.error("API 키가 설정되지 않았습니다.")
     
     # Initialize session state for chat history
     if "messages" not in st.session_state:
