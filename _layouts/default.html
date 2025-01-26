@@ -3,10 +3,14 @@
 
 <!doctype html>
 {% include copyright.html %}
-<html lang="{{ site.locale | replace: "_", "-" | default: "en" }}" class="no-js">
+<html lang="{{ site.locale | slice: 0,2 | default: "en" }}" class="no-js">
   <head>
     {% include head.html %}
     {% include head/custom.html %}
+    
+    <!-- Gemini API 설정 -->
+    <meta name="gemini-api-key" content="{{ site.gemini_api.key }}">
+    <meta name="gemini-api-endpoint" content="{{ site.gemini_api.endpoint }}">
   </head>
 
   <body class="layout--{{ page.layout | default: layout.layout }}{% if page.classes or layout.classes %}{{ page.classes | default: layout.classes | join: ' ' | prepend: ' ' }}{% endif %}" dir="{% if site.rtl %}rtl{% else %}ltr{% endif %}">

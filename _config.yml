@@ -336,3 +336,6 @@ gemini_api:
   key: "AIzaSyASPd5qXjOJk9w8H8DksyaWyKlKfw1SBFI"
   endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent"
 
+footer_scripts:
+  - /assets/js/chatbot.js
+
