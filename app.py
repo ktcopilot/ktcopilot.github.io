@@ -1,8 +1,15 @@
 import streamlit as st
 import google.generativeai as genai
 import yaml
+import os
 
 def load_api_key():
+    # First try to get API key from environment variable
+    api_key = os.getenv('GEMINI_API_KEY')
+    if api_key:
+        return api_key
+        
+    # Fallback to config file if environment variable is not set
     try:
         with open('_config.yml', 'r', encoding='utf-8') as file:
             config = yaml.safe_load(file)
