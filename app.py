@@ -51,6 +51,12 @@ def get_gemini_response(prompt, chat_history):
         return "죄송합니다. 응답을 생성하는 중에 오류가 발생했습니다. 다시 시도해주세요."
 
 def main():
+    st.set_page_config(
+        page_title="Azure 학습 경로 상담 챗봇",
+        page_icon="🎓",
+        layout="wide"
+    )
+    
     st.title("🎓 Azure 학습 경로 상담 챗봇")
     initialize_session_state()
     
@@ -90,27 +96,26 @@ def main():
                     
                     response = get_gemini_response(initial_prompt, [])
                     st.session_state.chat_history.append(("assistant", response))
+                    st.rerun()
 
     # 메인 채팅 인터페이스
     if st.session_state.user_info is not None:
-        for role, message in st.session_state.chat_history:
-            if role == "user":
-                st.write("👤 You:", message)
-            else:
-                st.write("🤖 Advisor:", message)
+        chat_container = st.container()
+        with chat_container:
+            for role, message in st.session_state.chat_history:
+                if role == "user":
+                    st.write("👤 You:", message)
+                else:
+                    st.write("🤖 Advisor:", message)
         
-        user_input = st.text_input("추가 질문이 있으시다면 입력해주세요:")
-        if user_input:
-            st.session_state.chat_history.append(("user", user_input))
-            
-            # 대화 내용을 문자열 리스트로 변환
-            chat_context = []
-            for role, msg in st.session_state.chat_history:
-                chat_context.append(f"{role}: {msg}")
-            
-            response = get_gemini_response(user_input, chat_context)
-            st.session_state.chat_history.append(("assistant", response))
-            st.rerun()
+        # 입력 필드를 항상 화면 하단에 고정
+        with st.container():
+            user_input = st.text_input("추가 질문이 있으시다면 입력해주세요:", key="user_input")
+            if user_input:
+                st.session_state.chat_history.append(("user", user_input))
+                response = get_gemini_response(user_input, [msg for _, msg in st.session_state.chat_history])
+                st.session_state.chat_history.append(("assistant", response))
+                st.rerun()
 
 if __name__ == "__main__":
     main() 
