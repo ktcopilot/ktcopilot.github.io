@@ -1,0 +1,14 @@
+[server]
+enableXsrfProtection = false
+enableCORS = false
+
+[browser]
+serverAddress = "localhost"
+serverPort = 8501
+
+[theme]
+primaryColor = "#0078D4"  # Microsoft Blue
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F0F2F5"
+textColor = "#262626"
+font = "sans serif" 
