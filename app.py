@@ -4,9 +4,9 @@ import yaml
 
 def load_api_key():
     try:
-        with open('_config.yml', 'r') as file:
+        with open('_config.yml', 'r', encoding='utf-8') as file:
             config = yaml.safe_load(file)
-            return config.get('key')
+            return config.get('gemini_api', {}).get('key')
     except Exception as e:
         st.error(f'Failed to load API key: {e}')
         return None
