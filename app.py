@@ -4,12 +4,16 @@ import os
 from datetime import datetime
 
 # Gemini API 키 설정
-from dotenv import load_dotenv
-load_dotenv()
+try:
+    GOOGLE_API_KEY = st.secrets["GOOGLE_API_KEY"]
+except Exception:
+    # 로컬 개발 환경을 위한 폴백
+    from dotenv import load_dotenv
+    load_dotenv()
+    GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 if not GOOGLE_API_KEY:
-    st.error("Please set GOOGLE_API_KEY in .env file")
+    st.error("Please set GOOGLE_API_KEY in .streamlit/secrets.toml or .env file")
     st.stop()
 
 # 기본 프롬프트 템플릿
