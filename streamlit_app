@@ -1,0 +1,16 @@
+import streamlit as st
+import pandas as pd
+import numpy as np
+
+st.title("Simple Streamlit Visualization")
+
+# Create a simple dataframe
+data = pd.DataFrame(
+    {"Column A": np.random.randn(100), "Column B": np.random.randn(100)}
+)
+
+st.write("Here is a simple dataframe:")
+st.dataframe(data)
+
+# Create a simple line chart
+st.line_chart(data)
