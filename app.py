@@ -38,9 +38,17 @@ def initialize_session_state():
         st.session_state.user_info = None
 
 def get_gemini_response(prompt, chat_history):
-    model = genai.GenerativeModel('gemini-pro')
-    response = model.generate_content([prompt] + chat_history)
-    return response.text
+    try:
+        model = genai.GenerativeModel('gemini-pro')
+        # 채팅 히스토리를 문자열로 변환
+        chat_context = "\n".join(chat_history) if chat_history else ""
+        full_prompt = f"{prompt}\n\n이전 대화 내용:\n{chat_context}" if chat_context else prompt
+        
+        response = model.generate_content(full_prompt)
+        return response.text
+    except Exception as e:
+        st.error(f"Error generating response: {str(e)}")
+        return "죄송합니다. 응답을 생성하는 중에 오류가 발생했습니다. 다시 시도해주세요."
 
 def main():
     st.title("🎓 Azure 학습 경로 상담 챗봇")
@@ -95,12 +103,14 @@ def main():
         if user_input:
             st.session_state.chat_history.append(("user", user_input))
             
-            # 전체 대화 컨텍스트 구성
-            chat_context = [msg for _, msg in st.session_state.chat_history]
-            response = get_gemini_response(user_input, chat_context)
+            # 대화 내용을 문자열 리스트로 변환
+            chat_context = []
+            for role, msg in st.session_state.chat_history:
+                chat_context.append(f"{role}: {msg}")
             
+            response = get_gemini_response(user_input, chat_context)
             st.session_state.chat_history.append(("assistant", response))
-            st.experimental_rerun()
+            st.rerun()
 
 if __name__ == "__main__":
     main() 
