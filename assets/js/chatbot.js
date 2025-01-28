@@ -267,7 +267,7 @@ class ChatBot {
       
       // 채팅창이 열릴 때 인사 메시지 표시
       if (!isVisible) {
-        this.addMessage('안녕하세요! Azure 학습 상담사입니다. 어떤 도움이 필요하신가요?', false);
+        this.addMessage('안녕하세요! KT AX 학습 도우미입니다. 어떤 도움이 필요하신가요?', false);
       }
     }
   
