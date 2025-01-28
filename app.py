@@ -51,10 +51,8 @@ def get_chatbot_response(model, prompt, chat_history):
         response = model.generate_content(full_prompt)
         return response.text
     except Exception as e:
-        st.error(f"API Error: {str(e)}")
-        if hasattr(e, 'response'):
-            st.error(f"Response Status: {e.response.status_code}")
-            st.error(f"Response Body: {e.response.text}")
+        error_message = str(e)
+        st.error(f"API Error: {error_message}")
         return "죄송합니다. API 호출 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요."
 
 def main():
