@@ -499,25 +499,27 @@ class QuizGenerator {
         localStorage.setItem('completedQuizzes', JSON.stringify(this.completedQuizzes));
       }
       
-      let filteredPosts = this.getPostsByCategory();
-      if (!filteredPosts || filteredPosts.length === 0) {
-        // 카테고리 필터링 없이 모든 포스트 사용
-        console.log('No posts with specified category. Using all posts.');
-        if (this.posts.length === 0) {
-          throw new Error('사용 가능한 포스트가 없습니다.');
-        }
-        filteredPosts = this.posts;
+      // 현재 페이지 콘텐츠만 가져오기
+      const currentPageContent = this.getCurrentPageContent();
+      if (!currentPageContent || currentPageContent.trim().length < 200) {
+        throw new Error('현재 페이지에 퀴즈를 생성할 충분한 내용이 없습니다.');
       }
-
-      // 다양한 포스트에서 퀴즈 생성
-      // 랜덤하게 3개 포스트 선택 (다양성 증가)
-      const postCount = Math.min(3, filteredPosts.length);
-      const selectedPosts = this.shuffleArray(filteredPosts).slice(0, postCount);
-      const randomPost = selectedPosts[0]; // 주요 포스트
-
-      console.log('Selected post:', randomPost.title);
+      
+      console.log('Current page content length:', currentPageContent.length);
+      
+      // 콘텐츠 길이에 따라 퀴즈 개수 조정
+      const quizCount = this.determineQuizCount(currentPageContent.length);
+      console.log(`콘텐츠 길이에 따라 ${quizCount}개의 퀴즈를 생성합니다.`);
       
       let useLocalQuiz = false;
+      
+      // 현재 페이지 정보
+      const currentPost = {
+        title: document.title,
+        content: currentPageContent,
+        url: window.location.href,
+        categories: this.getPageCategories()
+      };
       
       // API 키가 유효한 경우에만 API 호출 시도
       if (this.apiKey && this.apiKey.length > 10) {
@@ -533,8 +535,8 @@ class QuizGenerator {
             body: JSON.stringify({
               contents: [{
                 parts: [{
-                  text: `다음 내용을 바탕으로 5개의 다양한 퀴즈를 만들어주세요:
-${randomPost.content.substring(0, 6000)} // 너무 긴 콘텐츠 잘라내기
+                  text: `다음 내용을 바탕으로 ${quizCount}개의 퀴즈를 만들어주세요:
+${currentPageContent.substring(0, 6000)} // 너무 긴 콘텐츠 잘라내기
 
 반드시 다음 JSON 형식으로만 응답해주세요:
 {
@@ -549,14 +551,14 @@ ${randomPost.content.substring(0, 6000)} // 너무 긴 콘텐츠 잘라내기
 }
 
 퀴즈 생성 가이드라인:
-- 반드시 5개의 서로 다른 주제의 퀴즈를 만들어주세요
+- 반드시 ${quizCount}개의 서로 다른 주제의 퀴즈를 만들어주세요
 - 각 퀴즈는 4개의 선택지를 가져야 합니다
 - correct는 0-3 사이의 숫자여야 합니다
 - 모든 텍스트는 한글로 작성해주세요
 - 정답률은 65%가 되도록 난이도를 조절해주세요 (너무 쉽거나 너무 어렵지 않게)
 - 지식을 테스트하는 실용적인 질문으로 구성해주세요
 - 실무에 적용할 수 있는 내용이 좋습니다
-  서로 다른 영역의 질문을 만들어 다양성을 확보해주세요`
+- 오직 제공된 내용에서만 퀴즈를 생성해주세요`
                 }]
               }],
               generationConfig: {
@@ -585,7 +587,7 @@ ${randomPost.content.substring(0, 6000)} // 너무 긴 콘텐츠 잘라내기
 
           const parsedQuiz = JSON.parse(generatedContent);
           
-          if (!this.validateQuiz(parsedQuiz)) {
+          if (!this.validateQuiz(parsedQuiz, quizCount)) {
             throw new Error('잘못된 퀴즈 형식');
           }
 
@@ -604,26 +606,8 @@ ${randomPost.content.substring(0, 6000)} // 너무 긴 콘텐츠 잘라내기
       
       // 로컬 퀴즈 생성 필요한 경우
       if (useLocalQuiz || !this.quizzes || this.quizzes.length === 0) {
-        // 로컬 퀴즈를 여러 주제에서 조합하여 생성
-        this.quizzes = [];
-        
-        // 메인 주제의 퀴즈 가져오기
-        const mainTopic = this.getTopicFromTitle(randomPost.title);
-        const mainQuizzes = this.generateLocalQuiz(mainTopic).quizzes;
-        
-        // 다른 주제에서도 퀴즈 수집 (다양성 확보)
-        const topics = ['AI', 'Data', 'Cloud'].filter(t => t !== mainTopic);
-        const otherQuizzes = topics.flatMap(topic => this.generateLocalQuiz(topic).quizzes);
-        
-        // 메인 주제에서 2-3문제, 다른 주제에서 2-3문제 선택
-        const mainCount = Math.min(3, mainQuizzes.length);
-        const mainSelectedQuizzes = this.shuffleArray(mainQuizzes).slice(0, mainCount);
-        
-        const otherCount = 5 - mainCount;
-        const otherSelectedQuizzes = this.shuffleArray(otherQuizzes).slice(0, otherCount);
-        
-        // 합치고 섞기
-        this.quizzes = this.shuffleArray([...mainSelectedQuizzes, ...otherSelectedQuizzes]);
+        // 로컬 퀴즈 생성
+        this.quizzes = this.generateLocalQuizFromContent(currentPageContent, quizCount);
       }
       
       // 퀴즈 인덱스 초기화 및 관련 포스트 정보 추가
@@ -631,35 +615,14 @@ ${randomPost.content.substring(0, 6000)} // 너무 긴 콘텐츠 잘라내기
       this.quizzes = this.quizzes.map(quiz => ({
         ...quiz,
         relatedPost: {
-          title: randomPost.title,
-          url: randomPost.url
+          title: currentPost.title,
+          url: currentPost.url
         }
       }));
 
       // 이미 풀었던 퀴즈 필터링
       if (this.clientIP) {
         this.quizzes = this.filterSeenQuizzes(this.quizzes);
-        
-        // 필터링 후 퀴즈가 3개 미만이면 더 생성
-        if (this.quizzes.length < 3) {
-          console.log('Not enough unseen quizzes, generating more...');
-          // 랜덤하게 다른 주제의 퀴즈 추가
-          const additionalQuizzes = this.generateAdditionalQuizzes(5 - this.quizzes.length);
-          additionalQuizzes.forEach(quiz => {
-            this.quizzes.push({
-              ...quiz,
-              relatedPost: {
-                title: randomPost.title,
-                url: randomPost.url
-              }
-            });
-          });
-        }
-      }
-
-      // 최종적으로 5문제만 선택
-      if (this.quizzes.length > 5) {
-        this.quizzes = this.shuffleArray(this.quizzes).slice(0, 5);
       }
 
       this.currentQuiz = this.quizzes[this.currentQuizIndex];
@@ -675,11 +638,153 @@ ${randomPost.content.substring(0, 6000)} // 너무 긴 콘텐츠 잘라내기
       }
     }
   }
+  
+  // 현재 페이지 내용 가져오기
+  getCurrentPageContent() {
+    // 1. 주요 콘텐츠 영역 찾기
+    const contentElement = document.querySelector('.page__content') || 
+                          document.querySelector('article') || 
+                          document.querySelector('main');
+    
+    if (!contentElement) {
+      return '';
+    }
+    
+    // 2. 퀴즈 관련 요소들 제외하기 (이미 렌더링된 경우)
+    const quizElements = contentElement.querySelectorAll('.quiz-container, #generate-quiz, #error-message, #loading-indicator, .quiz-wrapper');
+    quizElements.forEach(el => {
+      if (el && el.parentNode) {
+        el.style.display = 'none'; // 임시로 숨기기
+      }
+    });
+    
+    // 3. 텍스트 콘텐츠 가져오기
+    const content = contentElement.textContent || '';
+    
+    // 4. 퀴즈 요소 다시 표시
+    quizElements.forEach(el => {
+      if (el) {
+        el.style.display = ''; // 원래 상태로 복원
+      }
+    });
+    
+    return content;
+  }
+  
+  // 페이지 카테고리 가져오기
+  getPageCategories() {
+    const categories = [];
+    
+    // 카테고리 요소 찾기
+    const categoryElements = document.querySelectorAll('.page__taxonomy-item[rel="tag"], .page__taxonomy-item[itemprop="keywords"]');
+    if (categoryElements && categoryElements.length > 0) {
+      categoryElements.forEach(el => {
+        if (el.textContent.trim()) {
+          categories.push(el.textContent.trim());
+        }
+      });
+    }
+    
+    return categories;
+  }
+  
+  // 콘텐츠 길이에 따라 퀴즈 개수 결정
+  determineQuizCount(contentLength) {
+    if (contentLength < 1000) {
+      return 2; // 짧은 콘텐츠
+    } else if (contentLength < 3000) {
+      return 3; // 중간 길이 콘텐츠
+    } else if (contentLength < 5000) {
+      return 4; // 긴 콘텐츠
+    } else {
+      return 5; // 매우 긴 콘텐츠
+    }
+  }
+  
+  // 페이지 콘텐츠에서 로컬 퀴즈 생성
+  generateLocalQuizFromContent(content, count) {
+    // 콘텐츠에서 키워드 추출
+    const keywords = this.extractContentKeywords(content);
+    console.log('Extracted keywords:', keywords);
+    
+    // 주제 유추
+    const topic = this.inferTopicFromKeywords(keywords);
+    console.log('Inferred topic:', topic);
+    
+    // 기본 퀴즈 가져오기
+    const baseQuizzes = this.generateLocalQuiz(topic).quizzes;
+    
+    // 필요한 만큼 선택
+    return this.shuffleArray(baseQuizzes).slice(0, Math.min(count, baseQuizzes.length));
+  }
+  
+  // 콘텐츠에서 키워드 추출
+  extractContentKeywords(content) {
+    // 불용어 필터
+    const stopWords = ['무엇', '이것', '것은', '다음', '중에서', '대한', '설명', '올바른', '가장', '어떤', '주요', '의미', '하는',
+                      '은', '는', '이', '가', '을', '를', '의', '에', '에서', '로', '으로', '와', '과', '이나', '또는'];
+    
+    // 텍스트 정제
+    const cleanText = content.toLowerCase()
+      .replace(/[.,?!:;"'()]/g, ' ')
+      .replace(/\s+/g, ' ');
+    
+    // 단어 분리 및 필터링
+    const words = cleanText.split(' ')
+      .filter(word => word.length > 1 && !stopWords.includes(word));
+    
+    // 단어 빈도 계산
+    const wordFreq = {};
+    words.forEach(word => {
+      wordFreq[word] = (wordFreq[word] || 0) + 1;
+    });
+    
+    // 빈도순으로 정렬하여 상위 10개 단어 반환
+    return Object.entries(wordFreq)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(entry => entry[0]);
+  }
+  
+  // 키워드로부터 주제 유추
+  inferTopicFromKeywords(keywords) {
+    // 주제별 관련 키워드
+    const topicKeywords = {
+      'AI': ['ai', '인공지능', '머신러닝', '딥러닝', '알고리즘', '모델', '학습', '신경망', 'ml'],
+      'Data': ['데이터', '분석', '웨어하우스', '레이크', '파이프라인', 'etl', '마이닝', '시각화', '처리'],
+      'Cloud': ['클라우드', 'aws', 'azure', 'gcp', '서버', '인프라', '컨테이너', '마이크로서비스', '가상화']
+    };
+    
+    // 각 주제별 점수 계산
+    const scores = {};
+    
+    Object.keys(topicKeywords).forEach(topic => {
+      scores[topic] = keywords.reduce((score, keyword) => {
+        if (topicKeywords[topic].some(tk => keyword.includes(tk) || tk.includes(keyword))) {
+          return score + 1;
+        }
+        return score;
+      }, 0);
+    });
+    
+    // 최고 점수 주제 찾기
+    let maxTopic = 'Data'; // 기본값
+    let maxScore = 0;
+    
+    Object.entries(scores).forEach(([topic, score]) => {
+      if (score > maxScore) {
+        maxTopic = topic;
+        maxScore = score;
+      }
+    });
+    
+    return maxTopic;
+  }
 
-  validateQuiz(quiz) {
+  validateQuiz(quiz, quizCount) {
     try {
-      if (!quiz.quizzes || !Array.isArray(quiz.quizzes) || quiz.quizzes.length !== 5) {
-        console.error('Quiz must contain exactly 5 questions');
+      if (!quiz.quizzes || !Array.isArray(quiz.quizzes) || quiz.quizzes.length !== quizCount) {
+        console.error(`Quiz must contain exactly ${quizCount} questions`);
         return false;
       }
 
@@ -724,8 +829,10 @@ ${randomPost.content.substring(0, 6000)} // 너무 긴 콘텐츠 잘라내기
       return;
     }
 
+    const totalQuizzes = this.quizzes.length;
+    
     container.innerHTML = `
-      <div class="quiz-progress">문제 ${this.currentQuizIndex + 1} / 5</div>
+      <div class="quiz-progress">문제 ${this.currentQuizIndex + 1} / ${totalQuizzes}</div>
       <div class="quiz-question"></div>
       <div class="quiz-options"></div>
       <button id="check-answer" class="quiz-button">정답 확인</button>
@@ -737,7 +844,7 @@ ${randomPost.content.substring(0, 6000)} // 너무 긴 콘텐츠 잘라내기
           <ul></ul>
         </div>
       </div>
-      ${this.currentQuizIndex < 4 ? 
+      ${this.currentQuizIndex < totalQuizzes - 1 ? 
         '<button id="next-quiz" class="quiz-button" style="margin-top: 1em; display: none;">다음 문제</button>' :
         '<button id="generate-new-quiz" class="quiz-button" style="margin-top: 1em; display: none;">새 퀴즈 생성</button>'
       }
