@@ -36,5 +36,25 @@
     </div>
 
     {% include scripts.html %}
+    
+    <!-- 챗봇 스크립트 (중복 방지용 ID 추가) -->
+    {% raw %}
+    <script>
+      if (!window.chtlConfig) {
+        window.chtlConfig = { chatbotId: "8842264962" };
+        
+        // 스크립트가 아직 로드되지 않았으면 로드
+        if (!document.getElementById('chatling-embed-script')) {
+          var script = document.createElement('script');
+          script.id = 'chatling-embed-script';
+          script.async = true;
+          script.dataset.id = '8842264962';
+          script.type = 'text/javascript';
+          script.src = 'https://chatling.ai/js/embed.js';
+          document.body.appendChild(script);
+        }
+      }
+    </script>
+    {% endraw %}
   </body>
 </html>

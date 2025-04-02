@@ -1,3 +1,24 @@
 <!-- start custom footer snippets -->
 
+<!-- 챗봇 직접 추가 (배포 환경용) -->
+<div id="chatbot-container">
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      if (!window.chtlConfig) {
+        window.chtlConfig = { chatbotId: "8842264962" };
+      }
+      
+      if (!document.getElementById('chatling-embed-script')) {
+        var script = document.createElement('script');
+        script.id = 'chatling-embed-script';
+        script.async = true;
+        script.setAttribute('data-id', '8842264962');
+        script.type = 'text/javascript';
+        script.src = 'https://chatling.ai/js/embed.js';
+        document.body.appendChild(script);
+      }
+    });
+  </script>
+</div>
+
 <!-- end custom footer snippets -->
