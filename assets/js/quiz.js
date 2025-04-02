@@ -121,18 +121,53 @@ class QuizGenerator {
     return 'browser-' + Math.abs(hash).toString(16);
   }
   
-  // IP 추적을 위한 퀴즈 해시 생성
+  // 퀴즈 해시 생성
   getQuizHash(question) {
-    // 질문에서 간단한 해시 생성
+    // 질문의 핵심 키워드 추출 후 해시 생성 (더 안정적인 유사성 검사)
+    const keywords = this.extractKeyQuizTerms(question);
+    const keywordStr = keywords.join(' ');
+    
     let hash = 0;
-    for (let i = 0; i < question.length; i++) {
-      const char = question.charCodeAt(i);
+    for (let i = 0; i < keywordStr.length; i++) {
+      const char = keywordStr.charCodeAt(i);
       hash = ((hash << 5) - hash) + char;
       hash = hash & hash; 
     }
     return Math.abs(hash).toString(16);
   }
   
+  // 퀴즈에서 핵심 용어 추출
+  extractKeyQuizTerms(question) {
+    // 특수문자 제거 및 소문자화
+    const cleanText = question.toLowerCase()
+      .replace(/[.,?!:;"'()]/g, '')
+      .replace(/\s+/g, ' ');
+    
+    // 불용어 목록
+    const stopWords = ['무엇', '이것', '것은', '다음', '중에서', '대한', '설명', '올바른', '가장', '어떤', '주요', '의미', '하는', 
+                      '은', '는', '이', '가', '을', '를', '의', '에', '에서', '로', '으로', '와', '과', '이나', '또는', '설명하', 
+                      '대하', '하기', '위한', '적인', '것이', '수', '통해', '그', '저', '있', '없'];
+    
+    // 도메인 특화 중요 용어
+    const importantTerms = ['데이터', '웨어하우스', '레이크', '클라우드', 'ai', '머신러닝', '딥러닝', '서버리스', '파이프라인', 
+                           'etl', 'aws', 'azure', 'gcp', '마이크로서비스', '컨테이너', '인공지능', '알고리즘'];
+    
+    // 단어 분리 및 필터링
+    const words = cleanText.split(' ')
+      .filter(word => word.length > 1 && !stopWords.includes(word));
+    
+    // 중요 용어 우선 포함
+    const keyTerms = words.filter(word => 
+      importantTerms.some(term => word.includes(term)) || word.length > 3);
+    
+    // 충분한 용어가 없으면 기본 단어들 추가
+    if (keyTerms.length < 3) {
+      return [...keyTerms, ...words.filter(w => !keyTerms.includes(w))].slice(0, 5);
+    }
+    
+    return keyTerms.slice(0, 5); // 최대 5개 핵심 용어만 사용
+  }
+
   // 특정 질문이 이미 출제된 적이 있는지 확인
   isQuizAlreadySeen(question) {
     if (!this.clientIP || !this.completedQuizzes.ipTracking[this.clientIP]) {
@@ -140,7 +175,78 @@ class QuizGenerator {
     }
     
     const questionHash = this.getQuizHash(question);
-    return !!this.completedQuizzes.ipTracking[this.clientIP].questions[questionHash];
+    
+    // 완전히 동일한 문제인지 확인
+    if (this.completedQuizzes.ipTracking[this.clientIP].questions[questionHash]) {
+      return true;
+    }
+    
+    // 유사한 문제인지 확인 (내용 기반 유사성 검사)
+    const questionLower = question.toLowerCase();
+    const storedQuestions = Object.values(this.completedQuizzes.ipTracking[this.clientIP].questions);
+    
+    // 유사한 문제 검사를 위한 임계값 (0.7 = 70% 유사도)
+    const similarityThreshold = 0.7;
+    
+    for (const storedQ of storedQuestions) {
+      if (storedQ.question) {
+        const similarity = this.calculateSimilarity(questionLower, storedQ.question.toLowerCase());
+        if (similarity > similarityThreshold) {
+          console.log(`유사한 문제 감지 (${Math.round(similarity * 100)}% 유사): ${storedQ.question}`);
+          return true;
+        }
+      }
+    }
+    
+    return false;
+  }
+  
+  // 두 문자열의 유사도 계산 (단어 기반 자카드 유사도)
+  calculateSimilarity(str1, str2) {
+    // 주요 단어만 추출 (불용어 제거)
+    const stopWords = ['무엇', '이것', '것은', '다음', '중에서', '대한', '설명', '올바른', '가장', '어떤', '주요', '의미', '하는', 
+                      '은', '는', '이', '가', '을', '를', '의', '에', '에서', '로', '으로', '와', '과', '이나', '또는'];
+    
+    // 문장에서 단어 추출
+    const getWords = (text) => {
+      return text.split(/\s+/)
+        .filter(word => word.length > 1 && !stopWords.includes(word))
+        .map(word => word.replace(/[.,?!:;()]/g, ''));
+    };
+    
+    const words1 = getWords(str1);
+    const words2 = getWords(str2);
+    
+    // 단어 중요도 가중치 적용
+    const importantTerms = ['데이터', '웨어하우스', '레이크', '클라우드', 'ai', '머신러닝', '딥러닝', 
+                           '서버리스', '파이프라인', 'etl', 'aws', 'azure', 'gcp', '마이크로서비스', 
+                           '컨테이너', '인공지능', '알고리즘'];
+    
+    // 중요 용어에 가중치 부여
+    const getWeightedTerms = (words) => {
+      const result = new Set();
+      words.forEach(word => {
+        result.add(word);
+        // 중요 용어가 포함된 단어는 두 번 추가하여 가중치 부여
+        if (importantTerms.some(term => word.includes(term))) {
+          result.add(word);
+        }
+      });
+      return result;
+    };
+    
+    // 단어 세트로 변환
+    const set1 = getWeightedTerms(words1);
+    const set2 = getWeightedTerms(words2);
+    
+    // 교집합 계산
+    const intersection = new Set([...set1].filter(word => set2.has(word)));
+    
+    // 합집합 계산
+    const union = new Set([...set1, ...set2]);
+    
+    // 자카드 유사도 계산 (교집합 크기 / 합집합 크기)
+    return intersection.size / union.size;
   }
   
   // 풀었던 퀴즈 기록
@@ -371,7 +477,12 @@ class QuizGenerator {
         filteredPosts = this.posts;
       }
 
-      const randomPost = filteredPosts[Math.floor(Math.random() * filteredPosts.length)];
+      // 다양한 포스트에서 퀴즈 생성
+      // 랜덤하게 3개 포스트 선택 (다양성 증가)
+      const postCount = Math.min(3, filteredPosts.length);
+      const selectedPosts = this.shuffleArray(filteredPosts).slice(0, postCount);
+      const randomPost = selectedPosts[0]; // 주요 포스트
+
       console.log('Selected post:', randomPost.title);
       
       let useLocalQuiz = false;
@@ -412,11 +523,12 @@ ${randomPost.content.substring(0, 6000)} // 너무 긴 콘텐츠 잘라내기
 - 모든 텍스트는 한글로 작성해주세요
 - 정답률은 65%가 되도록 난이도를 조절해주세요 (너무 쉽거나 너무 어렵지 않게)
 - 지식을 테스트하는 실용적인 질문으로 구성해주세요
-- 실무에 적용할 수 있는 내용이 좋습니다`
+- 실무에 적용할 수 있는 내용이 좋습니다
+  서로 다른 영역의 질문을 만들어 다양성을 확보해주세요`
                 }]
               }],
               generationConfig: {
-                temperature: 0.3,
+                temperature: 0.7,
                 maxOutputTokens: 1000,
                 topP: 0.8,
                 topK: 40
@@ -460,9 +572,26 @@ ${randomPost.content.substring(0, 6000)} // 너무 긴 콘텐츠 잘라내기
       
       // 로컬 퀴즈 생성 필요한 경우
       if (useLocalQuiz || !this.quizzes || this.quizzes.length === 0) {
-        // 포스트 제목에 따라 다른 퀴즈 생성
-        const localQuiz = this.generateLocalQuiz(randomPost.title);
-        this.quizzes = localQuiz.quizzes;
+        // 로컬 퀴즈를 여러 주제에서 조합하여 생성
+        this.quizzes = [];
+        
+        // 메인 주제의 퀴즈 가져오기
+        const mainTopic = this.getTopicFromTitle(randomPost.title);
+        const mainQuizzes = this.generateLocalQuiz(mainTopic).quizzes;
+        
+        // 다른 주제에서도 퀴즈 수집 (다양성 확보)
+        const topics = ['AI', 'Data', 'Cloud'].filter(t => t !== mainTopic);
+        const otherQuizzes = topics.flatMap(topic => this.generateLocalQuiz(topic).quizzes);
+        
+        // 메인 주제에서 2-3문제, 다른 주제에서 2-3문제 선택
+        const mainCount = Math.min(3, mainQuizzes.length);
+        const mainSelectedQuizzes = this.shuffleArray(mainQuizzes).slice(0, mainCount);
+        
+        const otherCount = 5 - mainCount;
+        const otherSelectedQuizzes = this.shuffleArray(otherQuizzes).slice(0, otherCount);
+        
+        // 합치고 섞기
+        this.quizzes = this.shuffleArray([...mainSelectedQuizzes, ...otherSelectedQuizzes]);
       }
       
       // 퀴즈 인덱스 초기화 및 관련 포스트 정보 추가
@@ -494,6 +623,11 @@ ${randomPost.content.substring(0, 6000)} // 너무 긴 콘텐츠 잘라내기
             });
           });
         }
+      }
+
+      // 최종적으로 5문제만 선택
+      if (this.quizzes.length > 5) {
+        this.quizzes = this.shuffleArray(this.quizzes).slice(0, 5);
       }
 
       this.currentQuiz = this.quizzes[this.currentQuizIndex];
@@ -1083,15 +1217,54 @@ ${randomPost.content.substring(0, 6000)} // 너무 긴 콘텐츠 잘라내기
   generateAdditionalQuizzes(count) {
     // 주제 목록
     const topics = ['AI', 'Data', 'Cloud'];
-    const randomTopic = topics[Math.floor(Math.random() * topics.length)];
+    // 모든 주제에서 다양한 문제 수집
+    let additionalQuizzes = [];
+    topics.forEach(topic => {
+      const topicQuizzes = this.generateLocalQuiz(topic).quizzes;
+      additionalQuizzes = [...additionalQuizzes, ...topicQuizzes];
+    });
     
-    // 선택된 주제의 로컬 퀴즈 생성
-    const additionalQuizzes = this.generateLocalQuiz(randomTopic).quizzes;
+    // 랜덤하게 섞기
+    additionalQuizzes = this.shuffleArray(additionalQuizzes);
     
     // 필요한 수만큼 필터링하고, 이미 본 문제 제외
     return additionalQuizzes
       .filter(quiz => !this.isQuizAlreadySeen(quiz.question))
       .slice(0, count);
+  }
+
+  // 배열 랜덤 셔플 함수
+  shuffleArray(array) {
+    const newArray = [...array];
+    for (let i = newArray.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+    }
+    return newArray;
+  }
+
+  // 제목에서 주제 유추
+  getTopicFromTitle(title) {
+    const titleLower = title.toLowerCase();
+    
+    if (titleLower.includes('ai') || titleLower.includes('인공지능') || 
+        titleLower.includes('머신러닝') || titleLower.includes('딥러닝') || titleLower.includes('ml')) {
+      return 'AI';
+    } 
+    else if (titleLower.includes('data') || titleLower.includes('데이터') || 
+             titleLower.includes('분석') || titleLower.includes('웨어하우스') || 
+             titleLower.includes('레이크') || titleLower.includes('etl')) {
+      return 'Data';
+    }
+    else if (titleLower.includes('cloud') || titleLower.includes('클라우드') || 
+             titleLower.includes('aws') || titleLower.includes('azure') || 
+             titleLower.includes('gcp') || titleLower.includes('서버')) {
+      return 'Cloud';
+    }
+    
+    // 기본값: 랜덤 주제
+    const topics = ['AI', 'Data', 'Cloud'];
+    return topics[Math.floor(Math.random() * topics.length)];
   }
 }
 
