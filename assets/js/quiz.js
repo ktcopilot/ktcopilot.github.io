@@ -96,40 +96,120 @@ class QuizGenerator {
 
   // 임의의 퀴즈 생성 (Gemini API 호출에 실패할 경우 대체 사용)
   generateLocalQuiz(topic) {
-    return {
-      quizzes: [
-        {
-          question: "데이터 레이크의 주요 특징으로 올바른 것은?",
-          options: ["구조화된 데이터만 저장 가능하다", "실시간 처리에 최적화되어 있다", "모든 형태의 원시 데이터를 저장할 수 있다", "데이터 품질 관리가 항상 최우선이다"],
-          correct: 2,
-          explanation: "데이터 레이크는 구조화, 반구조화, 비구조화된 모든 형태의 원시 데이터를 저장할 수 있는 저장소입니다. 이러한 특성은 데이터 과학자와 분석가들에게 높은 유연성을 제공하지만, 데이터 거버넌스와 품질 관리 측면에서는 추가적인 노력이 필요합니다. 반면 데이터 웨어하우스는 구조화된 데이터를 저장하고 처리하는 데 최적화되어 있습니다."
-        },
-        {
-          question: "데이터 웨어하우스에 대한 설명으로 가장 적절한 것은?",
-          options: ["비정형 데이터 저장에 최적화되어 있다", "스키마가 미리 정의된 구조화된 데이터를 저장한다", "높은 유연성을 제공하지만 성능이 낮다", "실시간 데이터 분석이 주 목적이다"],
-          correct: 1,
-          explanation: "데이터 웨어하우스는 스키마가 미리 정의된 구조화된 데이터를 저장하는 시스템입니다. 이는 데이터의 일관성과 품질을 보장하며, 비즈니스 인텔리전스 및 보고 목적으로 최적화되어 있습니다. SQL 기반 쿼리를 통한 빠른 분석이 가능하고, 정형화된 데이터 모델을 제공하여 데이터 분석가와 비즈니스 사용자가 쉽게 사용할 수 있는 장점이 있습니다."
-        },
-        {
-          question: "데이터 레이크하우스의 주요 장점은?",
-          options: ["데이터 레이크의 유연성과 웨어하우스의 구조를 결합한다", "오직 비용 효율성만 높다", "구조화된 데이터만 처리할 수 있다", "성능이 데이터 웨어하우스보다 항상 낮다"],
-          correct: 0,
-          explanation: "데이터 레이크하우스는 데이터 레이크의 유연성과 웨어하우스의 구조화된 특성을 결합한 하이브리드 접근 방식입니다. 이는 저비용 스토리지에 모든 유형의 데이터를 저장하면서도, 데이터 웨어하우스의 트랜잭션 지원, 스키마 적용, 데이터 품질 관리 기능을 제공합니다. 덕분에 BI와 ML 워크로드를 동일한 데이터 플랫폼에서 처리할 수 있어 데이터 복제 및 관리 오버헤드를 줄일 수 있습니다."
-        },
-        {
-          question: "ETL이 의미하는 것은?",
-          options: ["Extract, Transform, Load", "Extract, Transfer, Leverage", "Examine, Test, Load", "External Table Link"],
-          correct: 0,
-          explanation: "ETL은 Extract(추출), Transform(변환), Load(적재)의 약자로, 데이터 통합 과정의 핵심 단계입니다. 다양한 소스에서 데이터를 추출하고, 비즈니스 요구사항에 맞게 데이터를 변환한 후, 타겟 시스템(주로 데이터 웨어하우스)에 로드하는 과정을 의미합니다. 현대적인 데이터 파이프라인에서는 ELT(Extract, Load, Transform) 방식도 많이 사용되는데, 이는 먼저 데이터를 로드한 후 변환하는 접근법입니다."
-        },
-        {
-          question: "다음 중 데이터 레이크가 데이터 웨어하우스와 비교하여 갖는 단점은?",
-          options: ["확장성이 낮다", "데이터 처리 속도가 더 빠르다", "데이터 탐색이 더 쉽다", "데이터 품질 관리가 어려울 수 있다"],
-          correct: 3,
-          explanation: "데이터 레이크는 모든 유형의 데이터를 원시 형태로 저장하기 때문에 데이터 품질 관리가 어려울 수 있습니다. 스키마가 미리 정의되지 않는 'schema-on-read' 접근 방식을 사용하므로, 데이터 거버넌스 및 메타데이터 관리가 더 복잡해집니다. 이는 '데이터 늪(Data Swamp)'이 될 위험성이 있으며, 효과적인 카탈로그 관리와 데이터 관리 정책이 없으면 데이터 찾기와 활용이 어려워질 수 있습니다."
-        }
-      ]
-    };
+    // 태그나 제목에 따라 다른 퀴즈 생성
+    const topicLower = topic ? topic.toLowerCase() : '';
+    
+    // AI 관련 퀴즈
+    if (topicLower.includes('ai') || topicLower.includes('인공지능') || topicLower.includes('머신러닝') || topicLower.includes('딥러닝')) {
+      return {
+        quizzes: [
+          {
+            question: "머신러닝에서 과적합(Overfitting)을 방지하는 방법으로 적절하지 않은 것은?",
+            options: ["데이터 증강(Data Augmentation)", "드롭아웃(Dropout) 적용", "정규화(Regularization) 사용", "훈련 데이터를 줄이기"],
+            correct: 3,
+            explanation: "과적합 방지에는 데이터 증강, 드롭아웃, 정규화 등이 효과적이지만, 훈련 데이터를 줄이는 것은 오히려 모델의 일반화 능력을 감소시킬 수 있습니다. 충분한 훈련 데이터는 모델이 다양한 패턴을 학습하는 데 중요하며, 데이터가 부족할 경우 과소적합(Underfitting)이 발생할 위험이 있습니다."
+          },
+          {
+            question: "생성형 AI에서 '환각(Hallucination)' 현상이란?",
+            options: ["모델이 사실이 아닌 내용을 사실인 것처럼 생성하는 현상", "모델의 학습 속도가 극도로 느려지는 현상", "모델이 입력 데이터를 완전히 무시하는 현상", "모델이 너무 단순한 출력만 생성하는 현상"],
+            correct: 0,
+            explanation: "생성형 AI에서 '환각(Hallucination)'은 모델이 학습 데이터에 없거나 사실이 아닌 정보를 마치 사실인 것처럼 자신감 있게 생성하는 현상을 말합니다. 이는 LLM(대규모 언어 모델)과 같은 생성형 AI 시스템의 주요 한계 중 하나로, 신뢰할 수 있는 AI 시스템 개발에 있어 중요한 해결 과제입니다."
+          },
+          {
+            question: "트랜스포머(Transformer) 아키텍처의 핵심 구성 요소는?",
+            options: ["RNN 레이어", "셀프 어텐션(Self-Attention) 메커니즘", "컨볼루션 레이어", "MaxPooling 레이어"],
+            correct: 1,
+            explanation: "트랜스포머 아키텍처의 핵심은 셀프 어텐션(Self-Attention) 메커니즘입니다. 이 메커니즘은 시퀀스의 각 위치가 다른 모든 위치와 관련성을 계산할 수 있게 해주며, 병렬 처리가 가능하여 RNN보다 효율적입니다. BERT, GPT 등 현대적인 언어 모델들은 이 트랜스포머 아키텍처를 기반으로 합니다."
+          },
+          {
+            question: "인공지능 모델 학습에서 '손실 함수(Loss Function)'의 주요 목적은?",
+            options: ["모델의 크기를 최소화하는 것", "모델의 예측과 실제 값 사이의 차이를 측정하는 것", "학습 데이터셋의 크기를 결정하는 것", "모델의 학습 속도를 높이는 것"],
+            correct: 1,
+            explanation: "손실 함수(Loss Function)는 모델의 예측값과 실제 값(레이블) 사이의 차이를 수치화하여 모델의 성능을 평가합니다. 경사 하강법(Gradient Descent)과 같은 최적화 알고리즘은 이 손실 함수를 최소화하는 방향으로 모델의 파라미터를 조정하며, 이를 통해 모델은 점차 정확한 예측을 할 수 있게 됩니다."
+          },
+          {
+            question: "다음 중 비지도 학습(Unsupervised Learning) 알고리즘이 아닌 것은?",
+            options: ["K-평균 군집화(K-means clustering)", "결정 트리(Decision Tree)", "주성분 분석(PCA)", "오토인코더(Autoencoder)"],
+            correct: 1,
+            explanation: "결정 트리(Decision Tree)는 지도 학습(Supervised Learning) 알고리즘입니다. 레이블이 있는 데이터를 사용하여 입력 특성과 출력 레이블 간의 관계를 학습합니다. K-평균 군집화, 주성분 분석, 오토인코더는 모두 레이블 없이 데이터의 패턴이나 구조를 찾는 비지도 학습 알고리즘입니다."
+          }
+        ]
+      };
+    }
+    // 데이터 관련 퀴즈
+    else if (topicLower.includes('data') || topicLower.includes('데이터') || topicLower.includes('분석')) {
+      return {
+        quizzes: [
+          {
+            question: "데이터 레이크의 주요 특징으로 올바른 것은?",
+            options: ["구조화된 데이터만 저장 가능하다", "실시간 처리에 최적화되어 있다", "모든 형태의 원시 데이터를 저장할 수 있다", "데이터 품질 관리가 항상 최우선이다"],
+            correct: 2,
+            explanation: "데이터 레이크는 구조화, 반구조화, 비구조화된 모든 형태의 원시 데이터를 저장할 수 있는 저장소입니다. 이러한 특성은 데이터 과학자와 분석가들에게 높은 유연성을 제공하지만, 데이터 거버넌스와 품질 관리 측면에서는 추가적인 노력이 필요합니다. 반면 데이터 웨어하우스는 구조화된 데이터를 저장하고 처리하는 데 최적화되어 있습니다."
+          },
+          {
+            question: "데이터 분석에서 '차원의 저주(Curse of Dimensionality)'란?",
+            options: ["데이터 시각화가 3차원 이상 불가능한 현상", "특성(feature)의 수가 증가함에 따라 필요한 데이터의 양이 기하급수적으로 증가하는 현상", "데이터베이스에서 너무 많은 테이블이 생성되는 문제", "클라우드 스토리지 비용이 기하급수적으로 증가하는 현상"],
+            correct: 1,
+            explanation: "차원의 저주(Curse of Dimensionality)는 특성(feature)의 수가 증가함에 따라 필요한 데이터의 양이 기하급수적으로 증가하는 현상을 말합니다. 고차원 공간에서는 데이터 포인트 간 거리가 의미를 잃고, 데이터가 희소해져 패턴 인식이 어려워집니다. 이를 해결하기 위해 PCA와 같은 차원 축소 기법을 사용합니다."
+          },
+          {
+            question: "ETL과 ELT의 주요 차이점으로 올바른 것은?",
+            options: ["ETL은 클라우드 기반, ELT는 온프레미스 기반이다", "ETL은 Extract, Train, Load의 약자다", "ETL은 데이터 변환 후 로드, ELT는 로드 후 변환한다", "ETL은 정형 데이터만, ELT는 비정형 데이터만 처리한다"],
+            correct: 2,
+            explanation: "ETL(Extract, Transform, Load)은 데이터를 추출하여 변환한 후 타겟 시스템에 로드하는 방식입니다. 반면, ELT(Extract, Load, Transform)는 데이터를 먼저 타겟 시스템에 로드한 후 변환 작업을 수행합니다. ELT는 현대적인 데이터 레이크와 클라우드 기반 시스템에서 더 많이 사용되며, 대규모 데이터셋의 처리에 더 효율적인 경우가 많습니다."
+          },
+          {
+            question: "데이터 시각화에서 '인코딩(Encoding)'이란?",
+            options: ["데이터를 암호화하는 보안 기술", "데이터를 압축하는 방법", "데이터를 시각적 요소(색상, 크기, 위치 등)에 매핑하는 과정", "데이터를 다른 형식으로 변환하는 과정"],
+            correct: 2,
+            explanation: "데이터 시각화에서 '인코딩'은 데이터의 값이나 속성을 시각적 요소(색상, 크기, 모양, 위치 등)에 매핑하는 과정을 말합니다. 예를 들어, 산점도에서 데이터 포인트의 x, y 좌표는 두 변수를 위치에 인코딩한 것이고, 히트맵에서는 값을 색상의 강도로 인코딩합니다. 효과적인 인코딩은 데이터의 패턴과 관계를 직관적으로 파악할 수 있게 합니다."
+          },
+          {
+            question: "A/B 테스트에서 '통계적 유의성(Statistical Significance)'이 의미하는 것은?",
+            options: ["테스트의 경제적 가치", "테스트 결과가 중요하다는 주관적 평가", "관찰된 차이가 우연이 아닐 확률이 높다는 것", "테스트에 참여한 사용자 수"],
+            correct: 2,
+            explanation: "A/B 테스트에서 '통계적 유의성'은 관찰된 두 그룹 간의 차이가 단순한 우연이 아닐 확률이 통계적으로 높다는 것을 의미합니다. 일반적으로 p-값(p-value)이 0.05(5%) 미만일 때 통계적으로 유의하다고 판단합니다. 이는 관찰된 차이가 우연에 의한 것일 확률이 5% 미만이라는 의미입니다. 단, 통계적 유의성이 실질적인 비즈니스 중요성을 항상 보장하지는 않습니다."
+          }
+        ]
+      };
+    }
+    // 클라우드 관련 퀴즈
+    else {
+      return {
+        quizzes: [
+          {
+            question: "클라우드 컴퓨팅의 '서비스형 인프라(IaaS)'에 해당하는 것은?",
+            options: ["Microsoft Azure Functions", "Amazon EC2", "Google App Engine", "Salesforce"],
+            correct: 1,
+            explanation: "Amazon EC2(Elastic Compute Cloud)는 대표적인 서비스형 인프라(IaaS) 서비스입니다. IaaS는 가상 머신, 스토리지, 네트워크 등 기본적인 컴퓨팅 인프라를 제공하며, 사용자는 이 위에 운영체제와 애플리케이션을 직접 설치하고 관리합니다. Azure Functions는 서버리스(FaaS), App Engine은 서비스형 플랫폼(PaaS), Salesforce는 서비스형 소프트웨어(SaaS)에 해당합니다."
+          },
+          {
+            question: "다음 중 컨테이너화의 주요 이점이 아닌 것은?",
+            options: ["애플리케이션 이식성 향상", "일관된 개발 및 운영 환경 제공", "리소스 사용 효율성", "자동 데이터 백업 및 복구"],
+            correct: 3,
+            explanation: "컨테이너화는 애플리케이션과 그 의존성을 패키징하여 일관된 환경에서 실행할 수 있게 하는 기술입니다. 주요 이점으로는 이식성 향상, 일관된 환경 제공, 리소스 효율성 등이 있으나, 자동 데이터 백업 및 복구는 컨테이너화 자체의 이점이 아닌 별도의 데이터 관리 솔루션이 필요한 영역입니다. 컨테이너는 일반적으로 상태가 없는(stateless) 애플리케이션에 더 적합합니다."
+          },
+          {
+            question: "마이크로서비스 아키텍처의 특징으로 올바르지 않은 것은?",
+            options: ["서비스 간 독립적인 배포 가능", "각 서비스가 특정 비즈니스 기능에 집중", "공유 데이터베이스를 사용하여 데이터 일관성 유지", "서비스별로 다른 기술 스택 사용 가능"],
+            correct: 2,
+            explanation: "마이크로서비스 아키텍처에서는 일반적으로 각 서비스가 자체 데이터베이스를 관리하며, 공유 데이터베이스를 사용하는 것은 서비스 간 결합도를 높여 마이크로서비스의 독립성과 자율성을 저해합니다. 마이크로서비스의 핵심 원칙 중 하나는 각 서비스가 자신의 데이터를 소유하고, 필요한 경우 API를 통해 데이터에 접근하도록 하는 것입니다."
+          },
+          {
+            question: "클라우드 네이티브 애플리케이션을 설계할 때 고려해야 할 핵심 원칙은?",
+            options: ["단일 대형 데이터베이스 사용", "강한 결합(Tight Coupling)을 통한 일관성 확보", "확장성과 복원력을 위한 분산 시스템 설계", "모든 기능을 하나의 서비스에 통합"],
+            correct: 2,
+            explanation: "클라우드 네이티브 애플리케이션은 확장성, 복원력, 관리 용이성을 위해 분산 시스템으로 설계되어야 합니다. 이는 마이크로서비스, 컨테이너화, 동적 오케스트레이션, 자동화된 CI/CD 등의 원칙을 따릅니다. 단일 대형 데이터베이스와 강한 결합은 확장성을 제한하고, 모든 기능의 통합은 시스템의 복잡성을 증가시키고 유지보수를 어렵게 합니다."
+          },
+          {
+            question: "클라우드 서비스의 '멀티 테넌시(Multi-tenancy)'란?",
+            options: ["여러 클라우드 제공업체를 동시에 사용하는 전략", "단일 인스턴스가 여러 고객(테넌트)에게 서비스를 제공하는 구조", "여러 지역에 서비스를 배포하는 방식", "여러 버전의 소프트웨어를 동시에 운영하는 방식"],
+            correct: 1,
+            explanation: "멀티 테넌시(Multi-tenancy)는 하나의 소프트웨어 인스턴스가 여러 고객(테넌트)에게 서비스를 제공하는 아키텍처입니다. 각 테넌트는 가상적으로 독립된 환경처럼 보이지만, 실제로는 동일한 인프라와 코드 베이스를 공유합니다. 이는 리소스 효율성을 높이고 운영 비용을 절감할 수 있지만, 데이터 격리와 보안에 주의가 필요합니다."
+          }
+        ]
+      };
+    }
   }
 
   async generateQuiz() {
@@ -168,7 +248,7 @@ class QuizGenerator {
             body: JSON.stringify({
               contents: [{
                 parts: [{
-                  text: `다음 내용을 바탕으로 5개의 퀴즈를 만들어주세요:
+                  text: `다음 내용을 바탕으로 5개의 다양한 퀴즈를 만들어주세요:
 ${randomPost.content.substring(0, 6000)} // 너무 긴 콘텐츠 잘라내기
 
 반드시 다음 JSON 형식으로만 응답해주세요:
@@ -183,12 +263,14 @@ ${randomPost.content.substring(0, 6000)} // 너무 긴 콘텐츠 잘라내기
   ]
 }
 
-주의사항:
-- 반드시 5개의 퀴즈를 만들어주세요
+퀴즈 생성 가이드라인:
+- 반드시 5개의 서로 다른 주제의 퀴즈를 만들어주세요
 - 각 퀴즈는 4개의 선택지를 가져야 합니다
 - correct는 0-3 사이의 숫자여야 합니다
 - 모든 텍스트는 한글로 작성해주세요
-- 정답률은 60%가 되도록 난이도를 조절해주세요`
+- 정답률은 65%가 되도록 난이도를 조절해주세요 (너무 쉽거나 너무 어렵지 않게)
+- 지식을 테스트하는 실용적인 질문으로 구성해주세요
+- 실무에 적용할 수 있는 내용이 좋습니다`
                 }]
               }],
               generationConfig: {
@@ -618,15 +700,28 @@ ${randomPost.content.substring(0, 6000)} // 너무 긴 콘텐츠 잘라내기
   }
 
   getPostsByCategory() {
-    // 테크뉴런 카테고리 포스트 필터링
-    const techPosts = this.posts.filter(post => {
-      return post.categories && 
-             Array.isArray(post.categories) && 
-             post.categories.includes('테크뉴런');
+    // 선호 태그 목록
+    const preferredTags = ['ai', 'data', 'cloud'];
+    
+    // 선호 태그를 가진 포스트 필터링
+    const taggedPosts = this.posts.filter(post => {
+      // 태그 검사
+      if (post.tags && Array.isArray(post.tags)) {
+        const lowerTags = post.tags.map(tag => tag.toLowerCase());
+        return preferredTags.some(tag => lowerTags.includes(tag));
+      }
+      
+      // 카테고리 검사 (태그가 없는 경우 카테고리로 대체)
+      if (post.categories && Array.isArray(post.categories)) {
+        const lowerCategories = post.categories.map(cat => cat.toLowerCase());
+        return preferredTags.some(tag => lowerCategories.includes(tag));
+      }
+      
+      return false;
     });
     
-    // 테크뉴런 카테고리 포스트가 있으면 반환, 없으면 모든 포스트 반환
-    return techPosts.length > 0 ? techPosts : this.posts;
+    // 선호 태그 포스트가 있으면 반환, 없으면 모든 포스트 반환
+    return taggedPosts.length > 0 ? taggedPosts : this.posts;
   }
 
   nextQuiz() {
