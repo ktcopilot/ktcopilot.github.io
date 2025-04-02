@@ -5,6 +5,13 @@ if (typeof window.quizGeneratorInitialized === 'undefined') {
 class QuizGenerator {
   constructor() {
     try {
+      // 0. 메인 페이지 확인
+      this.mainPage = this.isMainPage();
+      if (this.mainPage) {
+        console.log('메인 페이지에서는 퀴즈 시스템을 초기화하지 않습니다.');
+        return;
+      }
+      
       // 1. 먼저 UI 요소 초기화 (어떤 경우에도 실행되어야 함)
       this.initializeEvents();
       
@@ -54,6 +61,31 @@ class QuizGenerator {
       console.error('QuizGenerator initialization failed:', error);
       this.showError('퀴즈 시스템을 초기화하는데 실패했습니다: ' + error.message);
     }
+  }
+
+  // 메인 페이지인지 확인하는 함수
+  isMainPage() {
+    // 기본 홈페이지 경로 확인
+    if (window.location.pathname === '/' || 
+        window.location.pathname === '/index.html' || 
+        window.location.pathname === '/index') {
+      return true;
+    }
+    
+    // 메타 태그나 body 클래스를 통한 추가 확인
+    const bodyClasses = document.body.className || '';
+    if (bodyClasses.includes('home') || bodyClasses.includes('front-page')) {
+      return true;
+    }
+    
+    // 제목 확인 (홈페이지는 보통 사이트 이름만 있음)
+    const pageTitle = document.title || '';
+    const siteTitle = document.querySelector('meta[property="og:site_name"]')?.content || '';
+    if (pageTitle === siteTitle) {
+      return true;
+    }
+    
+    return false;
   }
 
   // 풀었던 퀴즈 로드
@@ -808,6 +840,11 @@ ${randomPost.content.substring(0, 6000)} // 너무 긴 콘텐츠 잘라내기
   }
 
   initializeEvents() {
+    // 메인 페이지에서는 퀴즈 요소를 표시하지 않음
+    if (this.mainPage) {
+      return;
+    }
+    
     // 퀴즈 컨테이너가 없으면 생성
     let quizContainer = document.getElementById('quiz-container');
     if (!quizContainer) {
@@ -1270,7 +1307,23 @@ ${randomPost.content.substring(0, 6000)} // 너무 긴 콘텐츠 잘라내기
 
 // 페이지 로드 시 QuizGenerator 초기화
 document.addEventListener('DOMContentLoaded', () => {
+  // 간단한 메인 페이지 확인
+  const isMainPage = window.location.pathname === '/' || 
+                     window.location.pathname === '/index.html' || 
+                     window.location.pathname === '/index';
+                     
+  if (isMainPage) {
+    console.log('메인 페이지: 퀴즈 생성기 초기화를 건너뜁니다.');
+    // 필요시 퀴즈 관련 요소를 숨김 처리
+    const quizElements = document.querySelectorAll('.quiz-container, #generate-quiz, #error-message, #loading-indicator');
+    quizElements.forEach(el => {
+      if (el) el.style.display = 'none';
+    });
+    return;
+  }
+  
+  // 포스트 페이지에서는 정상적으로 초기화
   new QuizGenerator();
 });
 
-} // if 문 종료 
+} // if (typeof window.quizGeneratorInitialized === 'undefined') 문 종료

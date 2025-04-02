@@ -1,9 +1,12 @@
 <!-- start custom head snippets -->
 
-<<<<<<< HEAD
 <!-- 챗봇 코드 -->
 <script> window.chtlConfig = { chatbotId: "8842264962" } </script>
 <script async data-id="8842264962" id="chatling-embed-script" type="text/javascript" src="https://chatling.ai/js/embed.js"></script>
+
+<!-- Gemini API 설정 -->
+<meta name="gemini-api-key" content="{{ site.gemini_api.key }}">
+<meta name="gemini-api-endpoint" content="{{ site.gemini_api.endpoint }}">
 
 <!-- 메인 페이지에서 퀴즈 안내 문구만 숨기기 -->
 <style>
@@ -15,14 +18,6 @@
     display: block !important;
   }
 </style>
-=======
-{% if site.chatbot.enabled %}
-<!-- 챗봇 설정 (config.yml에서 가져옴) -->
-<script>
-  window.chtlConfig = { chatbotId: "{{ site.chatbot.id }}" };
-</script>
-{% endif %}
->>>>>>> e1bf8d5a0ca509c4df1461808991fdc16f84a83c
 
 <!-- insert favicons. use https://realfavicongenerator.net/ -->
 
