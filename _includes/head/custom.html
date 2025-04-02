@@ -1,5 +1,12 @@
 <!-- start custom head snippets -->
 
+{% if site.chatbot.enabled %}
+<!-- 챗봇 설정 (config.yml에서 가져옴) -->
+<script>
+  window.chtlConfig = { chatbotId: "{{ site.chatbot.id }}" };
+</script>
+{% endif %}
+
 <!-- insert favicons. use https://realfavicongenerator.net/ -->
 
 <!-- end custom head snippets -->
