@@ -1,5 +1,6 @@
 <!-- start custom head snippets -->
 
+<<<<<<< HEAD
 <!-- 챗봇 코드 -->
 <script> window.chtlConfig = { chatbotId: "8842264962" } </script>
 <script async data-id="8842264962" id="chatling-embed-script" type="text/javascript" src="https://chatling.ai/js/embed.js"></script>
@@ -14,6 +15,14 @@
     display: block !important;
   }
 </style>
+=======
+{% if site.chatbot.enabled %}
+<!-- 챗봇 설정 (config.yml에서 가져옴) -->
+<script>
+  window.chtlConfig = { chatbotId: "{{ site.chatbot.id }}" };
+</script>
+{% endif %}
+>>>>>>> e1bf8d5a0ca509c4df1461808991fdc16f84a83c
 
 <!-- insert favicons. use https://realfavicongenerator.net/ -->
 

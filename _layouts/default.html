@@ -37,6 +37,7 @@
 
     {% include scripts.html %}
     
+<<<<<<< HEAD
     <!-- 특정 퀴즈 설명 텍스트만 제거 -->
     <script>
       document.addEventListener('DOMContentLoaded', function() {
@@ -67,6 +68,27 @@
           });
         }
       });
+=======
+    <!-- 챗봇 스크립트 (동적 삽입) -->
+    <script>
+      (function() {
+        // 이미 로드되었는지 확인
+        if (window.chtlBotLoaded) return;
+        
+        // 설정
+        window.chtlConfig = { chatbotId: "8842264962" };
+        window.chtlBotLoaded = true;
+        
+        // DOM에 스크립트 추가
+        var script = document.createElement('script');
+        script.id = 'chatling-embed-script';
+        script.async = true;
+        script.dataset.id = '8842264962';
+        script.type = 'text/javascript';
+        script.src = 'https://chatling.ai/js/embed.js';
+        document.body.appendChild(script);
+      })();
+>>>>>>> e1bf8d5a0ca509c4df1461808991fdc16f84a83c
     </script>
   </body>
 </html>
