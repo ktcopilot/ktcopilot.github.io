@@ -37,24 +37,36 @@
 
     {% include scripts.html %}
     
-    <!-- 챗봇 스크립트 (중복 방지용 ID 추가) -->
-    {% raw %}
+    <!-- 특정 퀴즈 설명 텍스트만 제거 -->
     <script>
-      if (!window.chtlConfig) {
-        window.chtlConfig = { chatbotId: "8842264962" };
-        
-        // 스크립트가 아직 로드되지 않았으면 로드
-        if (!document.getElementById('chatling-embed-script')) {
-          var script = document.createElement('script');
-          script.id = 'chatling-embed-script';
-          script.async = true;
-          script.dataset.id = '8842264962';
-          script.type = 'text/javascript';
-          script.src = 'https://chatling.ai/js/embed.js';
-          document.body.appendChild(script);
+      document.addEventListener('DOMContentLoaded', function() {
+        // 퀴즈 페이지가 아닌 경우만 처리
+        if (window.location.pathname.indexOf('/quiz/') === -1) {
+          // "이 포스트의 내용을 기반으로 생성된 퀴즈를 풀어보세요" 텍스트만 찾아 제거
+          var walker = document.createTreeWalker(
+            document.body, 
+            NodeFilter.SHOW_TEXT, 
+            null, 
+            false
+          );
+          
+          var nodesToRemove = [];
+          var node;
+          while (node = walker.nextNode()) {
+            var text = node.nodeValue.trim();
+            if (text === "이 포스트의 내용을 기반으로 생성된 퀴즈를 풀어보세요.") {
+              nodesToRemove.push(node);
+            }
+          }
+          
+          nodesToRemove.forEach(function(node) {
+            if (node.parentNode) {
+              // 텍스트 노드만 제거
+              node.parentNode.removeChild(node);
+            }
+          });
         }
-      }
+      });
     </script>
-    {% endraw %}
   </body>
 </html>

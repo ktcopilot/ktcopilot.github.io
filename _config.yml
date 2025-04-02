@@ -340,3 +340,13 @@ footer_scripts:
   # - /assets/js/chatbot.js
   - /assets/js/quiz.js
 
+# Chatbot Configuration
+chatbot:
+  enabled: true
+  id: "8842264962"
+  provider: "chatling"
+
+# After Footer Scripts
+after_footer_scripts:
+  - "https://chatling.ai/js/embed.js"
+
