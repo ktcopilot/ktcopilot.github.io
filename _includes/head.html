@@ -16,6 +16,22 @@
   {%- endif %}
 </script>
 
+{% if site.gemini_api %}
+<meta name="gemini-api-key" content="{{ site.gemini_api.key }}">
+<meta name="gemini-api-endpoint" content="https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent">
+<script>
+  // 전역 변수로도 설정
+  window.GEMINI_API_KEY = "{{ site.gemini_api.key }}";
+</script>
+{% else %}
+<meta name="gemini-api-key" content="AIzaSyASPd5qXjOJk9w8H8DksyaWyKlKfw1SBFI">
+<meta name="gemini-api-endpoint" content="https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent">
+<script>
+  // 전역 변수로도 설정
+  window.GEMINI_API_KEY = "AIzaSyASPd5qXjOJk9w8H8DksyaWyKlKfw1SBFI";
+</script>
+{% endif %}
+
 <!-- For all browsers -->
 <link rel="stylesheet" href="{{ '/assets/css/main.css' | relative_url }}">
 <link rel="preload" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@latest/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
