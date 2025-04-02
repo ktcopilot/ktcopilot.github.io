@@ -45,12 +45,148 @@ class QuizGenerator {
       this.currentQuizIndex = 0;
       this.quizzes = [];
       
-      // 6. 포스트 데이터 로드
+      // 6. 이미 풀었던 퀴즈 추적
+      this.loadCompletedQuizzes();
+      
+      // 7. 포스트 데이터 로드
       this.loadPosts();
     } catch (error) {
       console.error('QuizGenerator initialization failed:', error);
       this.showError('퀴즈 시스템을 초기화하는데 실패했습니다: ' + error.message);
     }
+  }
+
+  // 풀었던 퀴즈 로드
+  loadCompletedQuizzes() {
+    try {
+      this.completedQuizzes = JSON.parse(localStorage.getItem('completedQuizzes')) || {};
+      
+      // 현재 IP 주소 기반 퀴즈 히스토리 확인
+      if (!this.completedQuizzes.ipTracking) {
+        this.completedQuizzes.ipTracking = {};
+      }
+      
+      // IP 주소 가져오기
+      this.getClientIP().then(ip => {
+        this.clientIP = ip;
+        if (!this.completedQuizzes.ipTracking[ip]) {
+          this.completedQuizzes.ipTracking[ip] = {
+            questions: {},
+            lastGenerated: Date.now()
+          };
+        }
+        console.log(`Quiz history loaded for IP: ${ip.substring(0, 5)}...`);
+      }).catch(err => {
+        console.warn('Failed to get client IP:', err);
+        // 폴백: 고유 브라우저 ID 사용
+        this.clientIP = this.getBrowserFingerprint();
+      });
+    } catch (error) {
+      console.warn('Failed to load completed quizzes, starting new history:', error);
+      this.completedQuizzes = {
+        ipTracking: {}
+      };
+    }
+  }
+  
+  // IP 주소 가져오기 (외부 API 사용)
+  async getClientIP() {
+    try {
+      const response = await fetch('https://api.ipify.org?format=json');
+      if (!response.ok) throw new Error('IP 조회 실패');
+      const data = await response.json();
+      return data.ip;
+    } catch (error) {
+      // 실패 시 브라우저 정보로 고유 ID 생성
+      return this.getBrowserFingerprint();
+    }
+  }
+  
+  // 브라우저 지문 생성 (IP 조회 실패시 폴백)
+  getBrowserFingerprint() {
+    // 간단한 브라우저 지문 생성
+    const browser = navigator.userAgent + navigator.language + navigator.platform;
+    const screenInfo = `${window.screen.width}x${window.screen.height}x${window.screen.colorDepth}`;
+    const timezone = new Date().getTimezoneOffset();
+    
+    // 문자열 해시 간단 구현
+    let hash = 0;
+    const fingerprint = browser + screenInfo + timezone;
+    for (let i = 0; i < fingerprint.length; i++) {
+      const char = fingerprint.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // 32비트 정수로 변환
+    }
+    
+    return 'browser-' + Math.abs(hash).toString(16);
+  }
+  
+  // IP 추적을 위한 퀴즈 해시 생성
+  getQuizHash(question) {
+    // 질문에서 간단한 해시 생성
+    let hash = 0;
+    for (let i = 0; i < question.length; i++) {
+      const char = question.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; 
+    }
+    return Math.abs(hash).toString(16);
+  }
+  
+  // 특정 질문이 이미 출제된 적이 있는지 확인
+  isQuizAlreadySeen(question) {
+    if (!this.clientIP || !this.completedQuizzes.ipTracking[this.clientIP]) {
+      return false;
+    }
+    
+    const questionHash = this.getQuizHash(question);
+    return !!this.completedQuizzes.ipTracking[this.clientIP].questions[questionHash];
+  }
+  
+  // 풀었던 퀴즈 기록
+  markQuizAsCompleted(question) {
+    if (!this.clientIP) return;
+    
+    const questionHash = this.getQuizHash(question);
+    
+    if (!this.completedQuizzes.ipTracking[this.clientIP]) {
+      this.completedQuizzes.ipTracking[this.clientIP] = {
+        questions: {},
+        lastGenerated: Date.now()
+      };
+    }
+    
+    this.completedQuizzes.ipTracking[this.clientIP].questions[questionHash] = {
+      timestamp: Date.now(),
+      question: question
+    };
+    
+    // 너무 오래된 기록은 제거 (30일)
+    this.cleanupOldQuizzes();
+    
+    // 로컬 스토리지에 저장
+    localStorage.setItem('completedQuizzes', JSON.stringify(this.completedQuizzes));
+  }
+  
+  // 오래된 퀴즈 기록 정리 (30일 이상 지난 기록)
+  cleanupOldQuizzes() {
+    const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+    
+    Object.keys(this.completedQuizzes.ipTracking).forEach(ip => {
+      // 30일 이상 접속하지 않은 IP는 기록 제거
+      if (this.completedQuizzes.ipTracking[ip].lastGenerated < thirtyDaysAgo) {
+        delete this.completedQuizzes.ipTracking[ip];
+        return;
+      }
+      
+      // 개별 문제 중 30일 이상 지난 것 제거
+      const questions = this.completedQuizzes.ipTracking[ip].questions;
+      Object.keys(questions).forEach(qHash => {
+        if (questions[qHash].timestamp < thirtyDaysAgo) {
+          delete questions[qHash];
+        }
+      });
+    });
   }
 
   async loadPosts() {
@@ -219,6 +355,12 @@ class QuizGenerator {
         loadingIndicator.style.display = 'block';
       }
       
+      // IP 기반 기록 업데이트
+      if (this.clientIP && this.completedQuizzes.ipTracking[this.clientIP]) {
+        this.completedQuizzes.ipTracking[this.clientIP].lastGenerated = Date.now();
+        localStorage.setItem('completedQuizzes', JSON.stringify(this.completedQuizzes));
+      }
+      
       let filteredPosts = this.getPostsByCategory();
       if (!filteredPosts || filteredPosts.length === 0) {
         // 카테고리 필터링 없이 모든 포스트 사용
@@ -333,6 +475,27 @@ ${randomPost.content.substring(0, 6000)} // 너무 긴 콘텐츠 잘라내기
         }
       }));
 
+      // 이미 풀었던 퀴즈 필터링
+      if (this.clientIP) {
+        this.quizzes = this.filterSeenQuizzes(this.quizzes);
+        
+        // 필터링 후 퀴즈가 3개 미만이면 더 생성
+        if (this.quizzes.length < 3) {
+          console.log('Not enough unseen quizzes, generating more...');
+          // 랜덤하게 다른 주제의 퀴즈 추가
+          const additionalQuizzes = this.generateAdditionalQuizzes(5 - this.quizzes.length);
+          additionalQuizzes.forEach(quiz => {
+            this.quizzes.push({
+              ...quiz,
+              relatedPost: {
+                title: randomPost.title,
+                url: randomPost.url
+              }
+            });
+          });
+        }
+      }
+
       this.currentQuiz = this.quizzes[this.currentQuizIndex];
       this.displayQuiz();
       
@@ -442,6 +605,11 @@ ${randomPost.content.substring(0, 6000)} // 너무 긴 콘텐츠 잘라내기
     if (!result) return;
 
     const isCorrect = parseInt(selected.value) === this.currentQuiz.correct;
+    
+    // 푼 문제 기록
+    if (this.currentQuiz && this.currentQuiz.question) {
+      this.markQuizAsCompleted(this.currentQuiz.question);
+    }
     
     // 추천 포스트 구성
     const suggestedPosts = this.getSuggestedPosts(this.currentQuiz.question, this.currentQuiz.explanation, this.currentQuiz.options);
@@ -870,6 +1038,60 @@ ${randomPost.content.substring(0, 6000)} // 너무 긴 콘텐츠 잘라내기
     현대 데이터 기반 비즈니스와
     AI 개발 환경에서 매우 중요합니다. 
     적절한 데이터 아키텍처를 선택하면 조직의 데이터 활용 능력을 크게 향상시킬 수 있습니다.`;
+  }
+
+  // 이미 본 문제를 필터링
+  filterSeenQuizzes(quizzes) {
+    if (!this.clientIP || !quizzes || quizzes.length === 0) {
+      return quizzes;
+    }
+    
+    // 이미 본 문제 필터링
+    const filteredQuizzes = quizzes.filter(quiz => !this.isQuizAlreadySeen(quiz.question));
+    
+    // 모든 문제를 이미 봤다면 원래 퀴즈 반환
+    if (filteredQuizzes.length === 0) {
+      console.log('All quizzes already seen, showing some again');
+      // 가장 오래된 문제 3개만 선택
+      return this.selectLeastRecentQuizzes(quizzes, 3);
+    }
+    
+    return filteredQuizzes;
+  }
+  
+  // 가장 오래 전에 풀었던 문제 선택
+  selectLeastRecentQuizzes(quizzes, count) {
+    if (!this.clientIP || !quizzes || quizzes.length === 0) {
+      return quizzes.slice(0, count);
+    }
+    
+    // 문제별 마지막 풀었던 시간 가져오기
+    const questionTimestamps = quizzes.map(quiz => {
+      const hash = this.getQuizHash(quiz.question);
+      const timestamp = this.completedQuizzes.ipTracking[this.clientIP]?.questions[hash]?.timestamp || 0;
+      return { quiz, timestamp };
+    });
+    
+    // 타임스탬프로 정렬하여 가장 오래된 문제 선택
+    return questionTimestamps
+      .sort((a, b) => a.timestamp - b.timestamp)
+      .slice(0, count)
+      .map(item => item.quiz);
+  }
+  
+  // 다양한 주제의 추가 퀴즈 생성
+  generateAdditionalQuizzes(count) {
+    // 주제 목록
+    const topics = ['AI', 'Data', 'Cloud'];
+    const randomTopic = topics[Math.floor(Math.random() * topics.length)];
+    
+    // 선택된 주제의 로컬 퀴즈 생성
+    const additionalQuizzes = this.generateLocalQuiz(randomTopic).quizzes;
+    
+    // 필요한 수만큼 필터링하고, 이미 본 문제 제외
+    return additionalQuizzes
+      .filter(quiz => !this.isQuizAlreadySeen(quiz.question))
+      .slice(0, count);
   }
 }
 
