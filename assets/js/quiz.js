@@ -37,7 +37,7 @@ class QuizGenerator {
       }
       
       // 4. API 엔드포인트 설정
-      this.apiEndpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
+      this.apiEndpoint = 'https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent';
       
       // 5. 데이터 초기화
       this.posts = [];
