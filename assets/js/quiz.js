@@ -72,6 +72,13 @@ class QuizGenerator {
       return true;
     }
     
+    // 카테고리, 태그, 검색 페이지 확인 - 이 페이지들에서도 퀴즈 표시하지 않음
+    if (window.location.pathname.includes('/categories/') ||
+        window.location.pathname.includes('/tags/') ||
+        window.location.pathname.includes('/search/')) {
+      return true;
+    }
+    
     // 메타 태그나 body 클래스를 통한 추가 확인
     const bodyClasses = document.body.className || '';
     if (bodyClasses.includes('home') || bodyClasses.includes('front-page')) {
@@ -331,7 +338,11 @@ class QuizGenerator {
     try {
       // 페이지에서 직접 포스트 내용 가져오기
       const postElements = document.querySelectorAll('.page__content');
-      if (postElements.length > 0) {
+      
+      // 현재 페이지가 퀴즈 전용 페이지인지 확인
+      const isQuizPage = window.location.pathname.includes('/quiz/');
+      
+      if (postElements.length > 0 && !isQuizPage) {
         this.posts = Array.from(postElements).map(post => {
           const categoryElements = post.closest('article')?.querySelectorAll('.page__taxonomy-item');
           const categories = categoryElements ? 
@@ -346,16 +357,86 @@ class QuizGenerator {
           };
         });
       } else {
+        // 퀴즈 페이지이거나 직접 포스트 내용을 찾을 수 없는 경우
         // posts.json에서 가져오기 시도
-        const response = await fetch('/api/posts.json');
-        if (!response.ok) {
-          throw new Error('포스트를 찾을 수 없습니다');
+        try {
+          console.log('포스트 데이터를 posts.json에서 가져오는 중...');
+          const response = await fetch('/api/posts.json');
+          if (!response.ok) {
+            throw new Error('포스트를 찾을 수 없습니다');
+          }
+          const data = await response.json();
+          this.posts = data.posts.map(post => ({
+            ...post,
+            categories: [post.category].filter(Boolean),
+            tags: post.tags || []
+          }));
+        } catch (jsonError) {
+          console.error('posts.json 로드 실패:', jsonError);
+          
+          // 대체 방법: 최근 포스트 목록 페이지에서 가져오기 시도
+          try {
+            console.log('최근 포스트 목록에서 데이터 추출 시도...');
+            const postsResponse = await fetch('/');
+            if (!postsResponse.ok) {
+              throw new Error('메인 페이지를 불러올 수 없습니다');
+            }
+            
+            const htmlText = await postsResponse.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(htmlText, 'text/html');
+            
+            // 포스트 항목들 찾기
+            const postItems = doc.querySelectorAll('.archive__item');
+            
+            if (postItems.length > 0) {
+              this.posts = Array.from(postItems).map(item => {
+                const titleEl = item.querySelector('.archive__item-title');
+                const title = titleEl?.textContent.trim() || 'Untitled';
+                const url = titleEl?.querySelector('a')?.href || '';
+                const excerpt = item.querySelector('.archive__item-excerpt')?.textContent.trim() || '';
+                
+                return {
+                  title: title,
+                  content: excerpt,
+                  url: url,
+                  categories: [],
+                  tags: []
+                };
+              });
+            } else {
+              throw new Error('포스트 목록을 찾을 수 없습니다');
+            }
+          } catch (fallbackError) {
+            console.error('대체 방법으로도 포스트 로드 실패:', fallbackError);
+            
+            // 기본 더미 데이터 생성
+            this.posts = [
+              {
+                title: 'AI의 기초와 응용',
+                content: 'AI(인공지능)는 현대 기술의 중심축입니다. 머신러닝과 딥러닝을 통해 데이터에서 패턴을 학습하고 의사결정을 수행합니다. 자연어 처리, 컴퓨터 비전, 추천 시스템 등 다양한 분야에 응용되고 있습니다.',
+                url: '#',
+                categories: ['AI'],
+                tags: ['ai', '머신러닝', '딥러닝']
+              },
+              {
+                title: '클라우드 컴퓨팅 아키텍처',
+                content: '클라우드 컴퓨팅은 인터넷을 통해 컴퓨팅 리소스를 제공하는 기술입니다. IaaS, PaaS, SaaS 모델로 구분되며, 확장성과 유연성이 뛰어납니다. AWS, Azure, GCP 등 다양한 클라우드 제공업체가 경쟁하고 있습니다.',
+                url: '#',
+                categories: ['Cloud'],
+                tags: ['cloud', 'aws', 'azure']
+              },
+              {
+                title: '빅데이터 분석과 시각화',
+                content: '빅데이터는 기존 방식으로 처리하기 어려운 대규모 데이터를 의미합니다. 하둡, 스파크와 같은 분산 처리 시스템을 활용하여 효율적으로 분석할 수 있습니다. 데이터 시각화는 복잡한 데이터를 이해하기 쉽게 표현하는 기법입니다.',
+                url: '#',
+                categories: ['Data'],
+                tags: ['data', '빅데이터', '데이터분석']
+              }
+            ];
+            console.log('기본 더미 데이터로 대체합니다');
+          }
         }
-        const data = await response.json();
-        this.posts = data.posts.map(post => ({
-          ...post,
-          categories: [post.category].filter(Boolean)
-        }));
       }
 
       console.log('Posts loaded:', this.posts.length);
@@ -641,6 +722,15 @@ ${currentPageContent.substring(0, 6000)} // 너무 긴 콘텐츠 잘라내기
   
   // 현재 페이지 내용 가져오기
   getCurrentPageContent() {
+    // 퀴즈 전용 페이지인지 확인 (/quiz/ 경로)
+    const isQuizPage = window.location.pathname.includes('/quiz/');
+    
+    if (isQuizPage) {
+      console.log('퀴즈 전용 페이지 감지: 태그 기반 콘텐츠 사용');
+      return this.getTagBasedContent(['ai', 'cloud', 'data']);
+    }
+    
+    // 일반 페이지일 경우 기존 로직 사용
     // 1. 주요 콘텐츠 영역 찾기
     const contentElement = document.querySelector('.page__content') || 
                           document.querySelector('article') || 
@@ -669,6 +759,65 @@ ${currentPageContent.substring(0, 6000)} // 너무 긴 콘텐츠 잘라내기
     });
     
     return content;
+  }
+  
+  // 특정 태그를 가진 포스트의 내용 가져오기
+  getTagBasedContent(tags) {
+    // 최근 포스트 목록이 있는지 확인
+    if (!this.posts || this.posts.length === 0) {
+      console.log('태그 기반 콘텐츠를 위해 posts.json 로드 시도');
+      this.loadPosts();
+      
+      // 로드 후에도 posts가 없으면 기본 콘텐츠 반환
+      if (!this.posts || this.posts.length === 0) {
+        return "KT Knowledge Hub는 AI, 클라우드, 데이터 분야의 전문 지식을 공유하는 허브입니다. 인공지능의 발전과 클라우드 기술의 혁신, 데이터 기반 의사결정에 대한 최신 정보를 제공합니다.";
+      }
+    }
+    
+    // 태그 기반 필터링
+    let taggedPosts = this.posts.filter(post => {
+      // 태그 검사
+      if (post.tags && Array.isArray(post.tags)) {
+        const lowerTags = post.tags.map(tag => tag.toLowerCase());
+        return tags.some(tag => lowerTags.includes(tag));
+      }
+      
+      // 카테고리 검사 (태그가 없는 경우 카테고리로 대체)
+      if (post.categories && Array.isArray(post.categories)) {
+        const lowerCategories = post.categories.map(cat => cat.toLowerCase());
+        return tags.some(tag => lowerCategories.includes(tag));
+      }
+      
+      return false;
+    });
+    
+    // 필터링된 결과가 없으면 전체 포스트 사용
+    if (!taggedPosts || taggedPosts.length === 0) {
+      console.log('태그 매칭 포스트가 없어 전체 포스트 사용');
+      taggedPosts = this.posts;
+    }
+    
+    // 랜덤하게 3개 포스트 선택하여 콘텐츠 결합
+    const postCount = Math.min(3, taggedPosts.length);
+    const selectedPosts = this.shuffleArray(taggedPosts).slice(0, postCount);
+    
+    // 선택된 포스트의 내용 합치기 (각 포스트는 최대 2000자)
+    let combinedContent = selectedPosts.map(post => {
+      // 제목 포함
+      let content = post.title ? `${post.title}\n\n` : '';
+      // 내용 추가 (최대 2000자)
+      content += post.content ? post.content.substring(0, 2000) : '';
+      return content;
+    }).join('\n\n---\n\n');
+    
+    console.log(`${selectedPosts.length}개 포스트 콘텐츠 결합 (총 ${combinedContent.length}자)`);
+    
+    // 너무 긴 경우 적절히 자르기
+    if (combinedContent.length > 8000) {
+      combinedContent = combinedContent.substring(0, 8000);
+    }
+    
+    return combinedContent;
   }
   
   // 페이지 카테고리 가져오기
@@ -783,9 +932,19 @@ ${currentPageContent.substring(0, 6000)} // 너무 긴 콘텐츠 잘라내기
 
   validateQuiz(quiz, quizCount) {
     try {
-      if (!quiz.quizzes || !Array.isArray(quiz.quizzes) || quiz.quizzes.length !== quizCount) {
-        console.error(`Quiz must contain exactly ${quizCount} questions`);
+      if (!quiz.quizzes || !Array.isArray(quiz.quizzes)) {
+        console.error('Quiz must be an array');
         return false;
+      }
+      
+      // 퀴즈 개수가 기대한 것보다 적을 경우에도 최소 1개 이상이면 허용
+      if (quiz.quizzes.length === 0) {
+        console.error('Quiz must contain at least one question');
+        return false;
+      }
+      
+      if (quiz.quizzes.length !== quizCount) {
+        console.warn(`Expected ${quizCount} quizzes but got ${quiz.quizzes.length} quizzes. Continuing anyway.`);
       }
 
       return quiz.quizzes.every(q => {
@@ -952,6 +1111,9 @@ ${currentPageContent.substring(0, 6000)} // 너무 긴 콘텐츠 잘라내기
       return;
     }
     
+    // 퀴즈 페이지인지 확인
+    const isQuizPage = window.location.pathname.includes('/quiz/');
+    
     // 퀴즈 컨테이너가 없으면 생성
     let quizContainer = document.getElementById('quiz-container');
     if (!quizContainer) {
@@ -971,7 +1133,18 @@ ${currentPageContent.substring(0, 6000)} // 너무 긴 콘텐츠 잘라내기
       const loadingIndicator = document.createElement('div');
       loadingIndicator.id = 'loading-indicator';
       loadingIndicator.className = 'loading-spinner';
-      loadingIndicator.innerHTML = '<div class="spinner"></div><p>퀴즈를 생성하는 중입니다...</p>';
+      
+      // 퀴즈 페이지인 경우 로딩 메시지를 더 자세하게 제공
+      if (isQuizPage) {
+        loadingIndicator.innerHTML = `
+          <div class="spinner"></div>
+          <p>AI, 클라우드, 데이터 관련 포스트에서 퀴즈를 생성하고 있습니다...</p>
+          <p class="loading-description">다양한 주제의 질문으로 지식을 테스트해보세요!</p>
+        `;
+      } else {
+        loadingIndicator.innerHTML = '<div class="spinner"></div><p>퀴즈를 생성하고 있습니다...</p>';
+      }
+      
       loadingIndicator.style.display = 'none';
       
       // 메인 콘텐츠 영역 찾기 (일반적인 Jekyll 테마의 경우)
@@ -1050,6 +1223,12 @@ ${currentPageContent.substring(0, 6000)} // 너무 긴 콘텐츠 잘라내기
           padding: 2rem;
         }
         
+        .loading-description {
+          font-size: 0.9rem;
+          color: #666;
+          margin-top: 0.5rem;
+        }
+        
         .spinner {
           border: 4px solid rgba(0, 0, 0, 0.1);
           width: 40px;
@@ -1071,7 +1250,13 @@ ${currentPageContent.substring(0, 6000)} // 너무 긴 콘텐츠 잘라내기
       quizTitle.textContent = '지식 확인 퀴즈';
       
       const quizDescription = document.createElement('p');
-      quizDescription.textContent = '이 포스트의 내용을 기반으로 생성된 퀴즈를 풀어보세요.';
+      
+      // 퀴즈 페이지와 일반 포스트 페이지의 설명 다르게 표시
+      if (isQuizPage) {
+        quizDescription.textContent = 'AI, 클라우드, 데이터 관련 포스트에서 생성된 퀴즈를 풀어보세요.';
+      } else {
+        quizDescription.textContent = '이 포스트의 내용을 기반으로 생성된 퀴즈를 풀어보세요.';
+      }
       
       // 생성 버튼 추가
       const generateButton = document.createElement('button');
