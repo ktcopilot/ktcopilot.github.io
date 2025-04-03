@@ -72,56 +72,54 @@ document.addEventListener('DOMContentLoaded', function() {
   // Add click event listener to each taxonomy link
   taxonomyLinks.forEach(link => {
     link.addEventListener('click', function(e) {
-      // Let the default anchor behavior happen to scroll to the section
+      // Prevent default action (stops page from scrolling to the anchor)
+      e.preventDefault();
       
-      // After the browser has had time to scroll, handle the filtering
-      setTimeout(function() {
-        // Get the taxonomy ID from the link's href
-        const taxonomyId = link.getAttribute('href').substring(1); // Remove the # character
-        
-        // Hide all taxonomy sections
-        const allSections = document.querySelectorAll('.taxonomy__section');
-        allSections.forEach(section => {
-          section.style.display = 'none';
-        });
-        
-        // Show only the selected section
-        const selectedSection = document.getElementById(taxonomyId);
-        if (selectedSection) {
-          selectedSection.style.display = 'block';
-        }
-        
-        // Remove active class from all links and add to the clicked one
-        taxonomyLinks.forEach(l => {
-          l.classList.remove('active');
-          l.parentElement.classList.remove('active');
-        });
-        link.classList.add('active');
-        link.parentElement.classList.add('active');
-        
-        // Show the Show All button
-        showAllButton.style.display = 'block';
-        
-        // Add a message indicating which filter is active
-        const message = document.createElement('div');
-        message.className = 'notice notice--info';
-        message.textContent = '표시 항목: ' + selectedSection.querySelector('h2').textContent;
-        message.id = 'filter-message';
-        message.style.padding = '0.5em 1em';
-        message.style.marginBottom = '1em';
-        message.style.marginTop = '0.5em';
-        
-        // Remove any existing message
-        const existingMessage = document.getElementById('filter-message');
-        if (existingMessage) {
-          existingMessage.remove();
-        }
-        
-        // Add the message below the title and the show all button
-        if (pageTitle) {
-          pageTitle.parentNode.insertBefore(message, showAllButton.nextSibling);
-        }
-      }, 100); // Small delay to allow browser to scroll
+      // Get the taxonomy ID from the link's href
+      const taxonomyId = link.getAttribute('href').substring(1); // Remove the # character
+      
+      // Hide all taxonomy sections
+      const allSections = document.querySelectorAll('.taxonomy__section');
+      allSections.forEach(section => {
+        section.style.display = 'none';
+      });
+      
+      // Show only the selected section
+      const selectedSection = document.getElementById(taxonomyId);
+      if (selectedSection) {
+        selectedSection.style.display = 'block';
+      }
+      
+      // Remove active class from all links and add to the clicked one
+      taxonomyLinks.forEach(l => {
+        l.classList.remove('active');
+        l.parentElement.classList.remove('active');
+      });
+      link.classList.add('active');
+      link.parentElement.classList.add('active');
+      
+      // Show the Show All button
+      showAllButton.style.display = 'block';
+      
+      // Add a message indicating which filter is active
+      const message = document.createElement('div');
+      message.className = 'notice notice--info';
+      message.textContent = '표시 항목: ' + selectedSection.querySelector('h2').textContent;
+      message.id = 'filter-message';
+      message.style.padding = '0.5em 1em';
+      message.style.marginBottom = '1em';
+      message.style.marginTop = '0.5em';
+      
+      // Remove any existing message
+      const existingMessage = document.getElementById('filter-message');
+      if (existingMessage) {
+        existingMessage.remove();
+      }
+      
+      // Add the message below the title and the show all button
+      if (pageTitle) {
+        pageTitle.parentNode.insertBefore(message, showAllButton.nextSibling);
+      }
     });
   });
 }); 
