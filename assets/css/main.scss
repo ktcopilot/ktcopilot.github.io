@@ -115,3 +115,57 @@ search: false
       }
     }
   }
+
+/* Taxonomy filter styles */
+#show-all-button {
+  padding: 0.5em 1em;
+  font-size: 0.8em;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+#show-all-container {
+  transition: opacity 0.3s ease;
+  opacity: 0.9;
+  
+  &:hover {
+    opacity: 1;
+  }
+}
+
+#filter-message {
+  transition: opacity 0.5s ease;
+}
+
+.taxonomy__index {
+  li {
+    transition: all 0.2s ease;
+    
+    &.active {
+      background-color: #f5f5f5;
+      border-radius: 4px;
+      padding-left: 0.5em;
+      
+      a {
+        font-weight: bold;
+        color: #007bff;
+      }
+    }
+    
+    a {
+      cursor: pointer;
+      
+      &:hover {
+        text-decoration: underline;
+      }
+      
+      &.active {
+        font-weight: bold;
+        color: #007bff;
+      }
+    }
+  }
+}
+
+.taxonomy__section {
+  transition: opacity 0.3s ease;
+}
