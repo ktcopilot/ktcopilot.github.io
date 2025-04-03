@@ -16,3 +16,24 @@ main:
   #   url: /collection-archive/
   # - title: "Sitemap"
   #   url: /sitemap/
+
+# 태그 목록 사이드바
+tags:
+  - title: "태그 필터"
+    children:
+      - title: "모든 포스트"
+        url: "/#all"
+      - title: "AI (6)"
+        url: "/#ai"
+      - title: "Cloud (5)"
+        url: "/#cloud"
+      - title: "Data (5)"
+        url: "/#data"
+      - title: "Copilot (2)"
+        url: "/#copilot"
+      - title: "Azure (2)"
+        url: "/#azure"
+      - title: "CopilotStudio (1)"
+        url: "/#copilotstudio"
+      - title: "Prompt (1)"
+        url: "/#prompt"

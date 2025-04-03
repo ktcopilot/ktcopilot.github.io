@@ -338,6 +338,7 @@ gemini_api:
 
 footer_scripts:
   - /assets/js/quiz.js
+  - /assets/js/tag-filter.js
 
 # Chatbot Configuration
 chatbot:
