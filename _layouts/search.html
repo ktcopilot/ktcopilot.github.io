@@ -15,28 +15,75 @@ layout: default
 <div id="main" role="main">
   {% include sidebar.html %}
 
-  <div class="archive">
+  <div class="archive search-page">
     {% unless page.header.overlay_color or page.header.overlay_image %}
       <h1 id="page-title" class="page__title"{% if page.locale %} lang="{{ page.locale }}"{% endif %}>{{ page.title }}</h1>
     {% endunless %}
 
     {{ content }}
 
-    {%- assign search_provider = site.search_provider | default: "lunr" -%}
-    {%- case search_provider -%}
-      {%- when "lunr" -%}
-        <input type="text" id="search" class="search-input" placeholder="{{ site.data.ui-text[site.locale].search_placeholder_text | default: 'Enter your search term...' }}" />
-        <div id="results" class="results"></div>
-      {%- when "google" -%}
-        <form onsubmit="return googleCustomSearchExecute();" id="cse-search-box-form-id">
-        <input type="text" id="cse-search-input-box-id" class="search-input" placeholder="{{ site.data.ui-text[site.locale].search_placeholder_text | default: 'Enter your search term...' }}" />
-        </form>
-        <div id="results" class="results">
-          <gcse:searchresults-only></gcse:searchresults-only>
+    <div class="search-container">
+      <form id="search-form" onsubmit="return executeSearch();" class="search-page-form">
+        <div class="search-input-group">
+          <input type="text" id="search" class="search-input" placeholder="{{ site.data.ui-text[site.locale].search_placeholder_text | default: '검색어를 입력하세요...' }}" value="{{ page.url | split: '=' | last | replace: '+', ' ' | url_decode }}" />
+          <button type="submit" class="search-button"><i class="fas fa-search" aria-hidden="true"></i><span class="sr-only">검색</span></button>
         </div>
-      {%- when "algolia" -%}
-        <div class="search-searchbar"></div>
-        <div class="search-hits"></div>
-    {%- endcase -%}
+      </form>
+      <div id="results" class="results"></div>
+    </div>
+
+    <script>
+      // 페이지 로드 시 URL에서 쿼리를 가져와서 검색 실행
+      document.addEventListener('DOMContentLoaded', function() {
+        var urlParams = new URLSearchParams(window.location.search);
+        var query = urlParams.get('q');
+        if(query) {
+          document.getElementById('search').value = query;
+          setTimeout(function() { 
+            executeSearch();
+          }, 500);
+        }
+      });
+
+      function executeSearch() {
+        var query = document.getElementById('search').value.toLowerCase();
+        if(query.length > 0) {
+          var resultDiv = document.getElementById('results');
+          
+          // Lunr 인덱스가 있는지 확인하고 검색 실행
+          if(typeof idx !== 'undefined' && typeof store !== 'undefined') {
+            var results = idx.search(query);
+            
+            resultDiv.innerHTML = '<p class="results__found">' + results.length + ' {{ site.data.ui-text[site.locale].results_found | default: "개 결과 발견" }}</p>';
+            
+            if(results.length > 0) {
+              for(var i=0; i<results.length; i++) {
+                var ref = results[i].ref;
+                var title = store[ref].title;
+                var url = store[ref].url;
+                var excerpt = store[ref].excerpt.substring(0, 200) + '...';
+                
+                var resultItem = document.createElement('div');
+                resultItem.className = 'list__item';
+                resultItem.innerHTML = 
+                  '<article class="archive__item">' +
+                    '<h2 class="archive__item-title">' +
+                      '<a href="' + url + '">' + title + '</a>' +
+                    '</h2>' +
+                    '<div class="archive__item-excerpt">' + excerpt + '</div>' +
+                  '</article>';
+                
+                resultDiv.appendChild(resultItem);
+              }
+            } else {
+              resultDiv.innerHTML += '<p>검색 결과가 없습니다. 다른 검색어를 시도해보세요.</p>';
+            }
+          } else {
+            resultDiv.innerHTML = '<p>검색 인덱스를 불러오는 중입니다. 잠시 후 다시 시도해주세요.</p>';
+          }
+        }
+        return false; // 폼 제출 방지
+      }
+    </script>
   </div>
 </div>

@@ -8,6 +8,136 @@ search: false
 @import "minimal-mistakes/skins/{{ site.minimal_mistakes_skin | default: 'default' }}"; // skin
 @import "minimal-mistakes"; // main partials
 
+// 메뉴와 어울리는 검색 스타일
+.nav-search-form {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  
+  input[type="text"] {
+    padding: 0.5em;
+    border: 1px solid #ddd;
+    border-radius: 4px 0 0 4px;
+    font-size: 14px;
+    width: 180px;
+    margin: 0;
+    border-right: none;
+    &:focus {
+      outline: none;
+      border-color: #007bff;
+    }
+  }
+  
+  .search-button {
+    background: #f8f9fa;
+    color: #424242;
+    border: 1px solid #ddd;
+    border-left: none;
+    border-radius: 0 4px 4px 0;
+    padding: 0.5em 0.75em;
+    font-size: 14px;
+    cursor: pointer;
+    margin: 0;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    
+    &:hover {
+      background: #e9ecef;
+      color: #212529;
+    }
+    
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
+  }
+}
+
+// 검색 결과 페이지 스타일
+.search-page {
+  .search-page-form {
+    max-width: 600px;
+    margin-bottom: 2em;
+  }
+  
+  .search-input-group {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    
+    .search-input {
+      flex: 1;
+      padding: 0.75em 1em;
+      font-size: 16px;
+      border: 1px solid #ddd;
+      border-radius: 4px 0 0 4px;
+      border-right: none;
+      margin: 0;
+      
+      &:focus {
+        outline: none;
+        border-color: #007bff;
+      }
+    }
+    
+    .search-button {
+      background: #f8f9fa;
+      color: #424242;
+      border: 1px solid #ddd;
+      border-left: none;
+      border-radius: 0 4px 4px 0;
+      padding: 0.75em 1em;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      
+      &:hover {
+        background: #e9ecef;
+        color: #212529;
+      }
+    }
+  }
+  
+  .results {
+    margin-top: 20px;
+  }
+  
+  .results__found {
+    font-weight: bold;
+    margin-bottom: 20px;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+  }
+  
+  .list__item {
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+    
+    h2 {
+      margin-top: 0;
+      margin-bottom: 10px;
+    }
+    
+    .archive__item-excerpt {
+      margin-bottom: 0;
+      font-size: 0.9em;
+      color: #666;
+    }
+  }
+}
+
 // 활성 태그 스타일
 .nav__sub-title + ul li a.active {
   font-weight: bold;

@@ -2,13 +2,31 @@
   {%- assign search_provider = site.search_provider | default: "lunr" -%}
   {%- case search_provider -%}
   {%- when "lunr" -%}
-  <form class="search-content__form" onkeydown="return event.key != 'Enter';" role="search">
+  <form class="search-content__form" onsubmit="return searchExecute();" role="search">
     <label class="sr-only" for="search">
       {{ site.data.ui-text[site.locale].search_label_text | default: 'Enter your search term...' }}
     </label>
     <input type="search" id="search" class="search-input" tabindex="-1" placeholder="{{ site.data.ui-text[site.locale].search_placeholder_text | default: 'Enter your search term...' }}" />
   </form>
   <div id="results" class="results"></div>
+  <script>
+  function searchExecute() {
+    var searchInput = document.getElementById('search');
+    var query = searchInput.value.toLowerCase();
+    if(query.length > 0) {
+      // jQuery를 사용할 수 있다면 jQuery 방식으로 트리거
+      if(typeof $ !== 'undefined') {
+        $(searchInput).trigger('keyup');
+      } else {
+        // jQuery가 없다면 네이티브 이벤트 발생
+        var event = new Event('keyup');
+        searchInput.dispatchEvent(event);
+      }
+    }
+    // false를 반환하여 폼 제출 시 페이지 새로고침 방지
+    return false;
+  }
+  </script>
   {%- when "google" -%}
   <form onsubmit="return googleCustomSearchExecute();" id="cse-search-box-form-id" role="search">
     <label class="sr-only" for="cse-search-input-box-id">

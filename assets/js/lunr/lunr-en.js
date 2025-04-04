@@ -71,3 +71,14 @@ $(document).ready(function() {
     }
   });
 });
+
+// 엔터 키로 검색을 실행하기 위한 함수
+function searchExecute() {
+  var query = $('input#search').val().toLowerCase();
+  if(query.length > 0) {
+    // 검색 쿼리로 결과 강제 업데이트
+    $('input#search').trigger('keyup');
+  }
+  // false를 반환하여 폼 제출 시 페이지 새로고침 방지
+  return false;
+}
