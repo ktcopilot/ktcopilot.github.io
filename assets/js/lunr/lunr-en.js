@@ -3,158 +3,171 @@
  * https://github.com/MihaiValentin/lunr-languages
  */
 !(function(){
-  var lunr = window.lunr;
-  
-  /* throw error if lunr is not yet included */
-  if('undefined' === typeof lunr) {
-    throw new Error('Lunr is not present. Please include / require lunr before this script.');
+  // lunr이 정의되어 있는지 확인
+  if (typeof lunr === 'undefined') {
+    console.error('lunr이 로드되지 않았습니다. 검색 기능이 작동하지 않을 수 있습니다.');
+    return;
   }
-
-  /* register specific locale function */
-  lunr.en = function() {
-    this.pipeline.reset();
-    this.pipeline.add(
-      lunr.trimmer,
-      lunr.stopWordFilter,
-      lunr.stemmer
-    );
-  };
-}());
-
-// 페이지가 로드된 후 검색 준비
-document.addEventListener('DOMContentLoaded', function() {
-  // 전역 검색 데이터 객체 초기화
-  if (typeof window.searchData !== 'object') {
-    window.searchData = {
-      store: []
+  
+  // Token 버전 확인
+  var isNewLunr = typeof lunr.Token === 'function';
+  console.log("Lunr Token 클래스 사용 가능: " + isNewLunr);
+  
+  // 간단한 lunr 토큰 래퍼 생성
+  var LunrTokenWrapper = function(str) {
+    this.str = str || "";
+    this.metadata = {};
+    
+    this.toString = function() {
+      return this.str;
     };
-    console.log('searchData 객체 초기화됨');
-  }
-
-  // 인덱스 생성
-  var createSearchIndex = function() {
-    try {
-      // 이미 인덱스가 있는지 확인
-      if (window.searchData.idx) {
-        console.log('이미 생성된 검색 인덱스가 있습니다.');
-        return;
+    
+    this.update = function(fn) {
+      this.str = fn(this.str);
+      return this;
+    };
+    
+    this.clone = function() {
+      return new LunrTokenWrapper(this.str);
+    };
+    
+    this.position = [0, 0];
+  };
+  
+  // 토큰 생성 함수
+  var createToken = function(str) {
+    if (!str) return null;
+    str = String(str).trim().toLowerCase();
+    if (str === "") return null;
+    
+    // lunr 버전에 따라 다르게 처리
+    if (isNewLunr) {
+      try {
+        return new lunr.Token(str);
+      } catch (e) {
+        return new LunrTokenWrapper(str);
       }
-
-      // 저장된 데이터가 있는지 확인
-      if (!window.searchData.store || window.searchData.store.length === 0) {
-        console.log('검색 데이터가 비어있습니다. 인덱스 생성을 건너뜁니다.');
-        return;
-      }
-
-      console.log('lunr 인덱스 생성 시작, 항목 수: ' + window.searchData.store.length);
+    } else {
+      return new LunrTokenWrapper(str);
+    }
+  };
+  
+  // 안전 유틸리티 함수 - 모든 토큰 처리에 사용
+  var safeProcess = function(token, processor) {
+    if (!token) return null;
+    
+    // 이미 문자열인 경우
+    if (typeof token === 'string') {
+      var str = token.trim().toLowerCase();
+      if (!str) return null;
       
-      // 인덱스 생성
-      window.searchData.idx = lunr(function() {
-        // 필드 정의
-        this.field('title', { boost: 10 });
-        this.field('excerpt');
-        this.field('categories');
-        this.field('tags');
-        this.ref('id');
-        
-        // 파이프라인 설정
-        this.pipeline.remove(lunr.trimmer);
-        
-        // 문서 추가
-        for (var i = 0; i < window.searchData.store.length; i++) {
-          var item = window.searchData.store[i];
-          this.add({
-            title: item.title,
-            excerpt: item.excerpt,
-            categories: item.categories,
-            tags: item.tags,
-            id: i
+      // 문자열에 직접 함수 적용
+      return processor(str);
+    }
+    
+    // 토큰 객체인 경우
+    if (token && typeof token.toString === 'function') {
+      var tokenStr = token.toString().trim().toLowerCase();
+      if (!tokenStr) return null;
+      
+      // update 메서드가 있는 경우 (표준 lunr.Token)
+      if (typeof token.update === 'function') {
+        try {
+          return token.update(function() { 
+            return processor(tokenStr);
           });
+        } catch (e) {
+          // update 메서드가 실패하면 새 문자열 반환
+          return processor(tokenStr);
         }
-      });
+      } else {
+        // update가 없으면 새 문자열 반환
+        return processor(tokenStr);
+      }
+    }
+    
+    // 그 외 케이스는 null 반환
+    return null;
+  };
+  
+  // 안전한 trimmer 함수
+  var safeTrimmer = function(token) {
+    return safeProcess(token, function(str) {
+      return str.trim().toLowerCase();
+    });
+  };
+  
+  // 안전한 stemmer 함수 (사용자 정의)
+  var safeStemmer = function(token) {
+    return safeProcess(token, function(str) {
+      // 기본 어간 추출 - 영어 단어만 처리
+      if (/^[a-z0-9]+$/.test(str)) {
+        var stemmed = str;
+        
+        // 간단한 어간 추출 규칙 적용
+        if (str.length > 3) {
+          // 's' 제거 (복수형)
+          if (str.endsWith('s')) {
+            stemmed = str.substring(0, str.length - 1);
+          }
+          // 'ing' 제거
+          if (str.endsWith('ing')) {
+            stemmed = str.substring(0, str.length - 3);
+          }
+          // 'ed' 제거
+          if (str.endsWith('ed')) {
+            stemmed = str.substring(0, str.length - 2);
+          }
+        }
+        
+        return stemmed;
+      }
       
-      console.log('lunr 인덱스 생성 완료, 검색 준비됨');
-      
-      // URL 검색 파라미터 처리
-      processUrlSearchQuery();
-    } catch (e) {
-      console.error('lunr 인덱스 생성 오류:', e);
+      // 비영어 단어는 그대로 반환
+      return str;
+    });
+  };
+  
+  // stopWordFilter 안전 구현
+  var safeStopWordFilter = function(token) {
+    if (!token) return null;
+    
+    var str = typeof token === 'string' ? token : token.toString();
+    str = str.trim().toLowerCase();
+    
+    // 불용어 목록 - 가장 일반적인 영어 불용어
+    var stopWords = {
+      'a': true, 'an': true, 'and': true, 'are': true, 'as': true, 'at': true,
+      'be': true, 'but': true, 'by': true, 'for': true, 'if': true, 'in': true,
+      'into': true, 'is': true, 'it': true, 'no': true, 'not': true, 'of': true,
+      'on': true, 'or': true, 'such': true, 'that': true, 'the': true, 'their': true,
+      'then': true, 'there': true, 'these': true, 'they': true, 'this': true,
+      'to': true, 'was': true, 'will': true, 'with': true
+    };
+    
+    // 불용어인 경우 null 반환
+    if (stopWords[str]) return null;
+    
+    // 불용어가 아닌 경우 원래 토큰 반환
+    return token;
+  };
+  
+  // 영어 언어 함수 등록 - 완전 사용자 정의 버전
+  lunr.en = function() {
+    // 파이프라인 초기화
+    this.pipeline.reset();
+    
+    // 사용자 정의 파이프라인 적용
+    this.pipeline.add(safeTrimmer);
+    this.pipeline.add(safeStopWordFilter);
+    this.pipeline.add(safeStemmer);
+    
+    // 검색 파이프라인 초기화
+    if (this.searchPipeline) {
+      this.searchPipeline.reset();
+      this.searchPipeline.add(safeStemmer);
     }
   };
   
-  // URL 검색 쿼리 파라미터 처리
-  var processUrlSearchQuery = function() {
-    if (window.location.pathname.indexOf('/search/') !== -1) {
-      var urlParams = new URLSearchParams(window.location.search);
-      var queryParam = urlParams.get('q');
-      
-      if (queryParam && queryParam.trim() !== '') {
-        var searchInput = document.getElementById('search');
-        if (searchInput) {
-          searchInput.value = queryParam;
-          // jQuery 트리거
-          if (typeof $ !== 'undefined') {
-            $(searchInput).trigger('keyup');
-          } else {
-            // 네이티브 이벤트
-            var event = new Event('keyup');
-            searchInput.dispatchEvent(event);
-          }
-        }
-      }
-    }
-  };
-  
-  // 인덱스 생성 시도 (1초 후)
-  setTimeout(createSearchIndex, 1000);
-});
-
-$(document).ready(function() {
-  $('input#search').on('keyup', function () {
-    var resultdiv = $('#results');
-    var query = $(this).val().toLowerCase();
-    var result =
-      window.searchData.idx.query(function (q) {
-        query.split(lunr.tokenizer.separator).forEach(function (term) {
-          q.term(term, { boost: 100 })
-          if(query.lastIndexOf(" ") != query.length-1){
-            q.term(term, {  usePipeline: false, wildcard: lunr.Query.wildcard.TRAILING, boost: 10 })
-          }
-          if (term != ""){
-            q.term(term, {  usePipeline: false, editDistance: 1, boost: 1 })
-          }
-        })
-      });
-    resultdiv.empty();
-    resultdiv.prepend('<p class="results__found">'+result.length+' {{ site.data.ui-text[site.locale].results_found | default: "Result(s) found" }}</p>');
-    for (var item in result) {
-      var ref = result[item].ref;
-      if(window.searchData.store[ref].teaser){
-        var searchitem =
-          '<div class="list__item">'+
-            '<article class="archive__item" itemscope itemtype="https://schema.org/CreativeWork">'+
-              '<h2 class="archive__item-title" itemprop="headline">'+
-                '<a href="'+window.searchData.store[ref].url+'" rel="permalink">'+window.searchData.store[ref].title+'</a>'+
-              '</h2>'+
-              '<div class="archive__item-teaser">'+
-                '<img src="'+window.searchData.store[ref].teaser+'" alt="">'+
-              '</div>'+
-              '<p class="archive__item-excerpt" itemprop="description">'+window.searchData.store[ref].excerpt.split(" ").splice(0,20).join(" ")+'...</p>'+
-            '</article>'+
-          '</div>';
-      }
-      else{
-    	  var searchitem =
-          '<div class="list__item">'+
-            '<article class="archive__item" itemscope itemtype="https://schema.org/CreativeWork">'+
-              '<h2 class="archive__item-title" itemprop="headline">'+
-                '<a href="'+window.searchData.store[ref].url+'" rel="permalink">'+window.searchData.store[ref].title+'</a>'+
-              '</h2>'+
-              '<p class="archive__item-excerpt" itemprop="description">'+window.searchData.store[ref].excerpt.split(" ").splice(0,20).join(" ")+'...</p>'+
-            '</article>'+
-          '</div>';
-      }
-      resultdiv.append(searchitem);
-    }
-  });
-});
+  console.log("lunr-en.js 로드됨 (완전 사용자 정의 모드)");
+})();

@@ -20,7 +20,8 @@
   <div id="results" class="results">
     <div class="search-initial-message">
       <p>검색어를 입력하면 결과가 여기에 표시됩니다.</p>
-      <p><small>검색 인덱스가 로드되는 데 약간의 시간이 필요할 수 있습니다.</small></p>
+      <div class="loader"></div>
+      <p><small>검색 인덱스를 생성 중입니다. 잠시만 기다려주세요.</small></p>
     </div>
   </div>
   {%- when "google" -%}
@@ -85,11 +86,16 @@
   .results__found {
     margin-bottom: 1em;
     font-weight: bold;
+    color: #333;
   }
   
   .no-results {
     color: #666;
     font-style: italic;
+    padding: 1em;
+    text-align: center;
+    background-color: #f9f9f9;
+    border-radius: 4px;
   }
   
   .search-initial-message {
@@ -100,12 +106,48 @@
     border-radius: 4px;
   }
   
+  .search-error {
+    color: #d32f2f;
+    padding: 1em;
+    text-align: center;
+    background-color: #ffeaea;
+    border-radius: 4px;
+    margin: 1em 0;
+  }
+  
   /* 검색 결과 하이라이트 스타일 */
-  .archive__item-excerpt mark {
+  .archive__item-excerpt mark,
+  .archive__item-title mark {
     background-color: #ffffd0;
     padding: 0 2px;
     border-radius: 2px;
     font-weight: bold;
+  }
+  
+  /* 검색 결과 태그 스타일 */
+  .archive__item-tags {
+    margin-top: 0.5em;
+  }
+  
+  .archive__item-tags .tag {
+    display: inline-block;
+    background-color: #f1f1f1;
+    color: #666;
+    padding: 3px 8px;
+    margin: 0 5px 5px 0;
+    border-radius: 3px;
+    font-size: 0.8em;
+  }
+  
+  /* 검색 중 로딩 표시 */
+  .searching {
+    text-align: center;
+    padding: 2em 0;
+  }
+  
+  .searching p {
+    margin-top: 1em;
+    color: #666;
   }
   
   /* 검색 결과 애니메이션 */
@@ -128,4 +170,19 @@
   .list__item:nth-child(4) { animation-delay: 0.3s; }
   .list__item:nth-child(5) { animation-delay: 0.4s; }
   .list__item:nth-child(n+6) { animation-delay: 0.5s; }
+  
+  /* 로딩 인디케이터 */
+  .loader {
+    margin: 20px auto;
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(150, 150, 150, 0.2);
+    border-radius: 50%;
+    border-top-color: #4285f4;
+    animation: spin 1s ease-in-out infinite;
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
 </style>

@@ -6,96 +6,59 @@
   {% assign lang = "en" %}
 {% endcase %}
 <!-- 검색에 필요한 스크립트 로드 -->
-<script src="{{ '/assets/js/vendor/jquery/jquery.min.js' | relative_url }}"></script>
 <script src="{{ '/assets/js/lunr/lunr.min.js' | relative_url }}"></script>
 
 <!-- 검색 데이터 스토어 생성 -->
 <script>
-// 전역 검색 데이터 객체 초기화
-window.searchData = window.searchData || {};
-window.searchData.store = [
-  {%- for c in site.collections -%}
-    {%- if forloop.last -%}
-      {%- assign l = true -%}
-    {%- endif -%}
-    {%- assign docs = c.docs | where_exp:'doc','doc.search != false' -%}
-    {%- for doc in docs -%}
-      {%- if doc.header.teaser -%}
-        {%- capture teaser -%}{{ doc.header.teaser }}{%- endcapture -%}
-      {%- else -%}
-        {%- assign teaser = site.teaser -%}
-      {%- endif -%}
-      {
-        "title": {{ doc.title | jsonify }},
-        "excerpt":
-          {%- if site.search_full_content == true -%}
-            {{ doc.content | newline_to_br |
-              replace:"<br />", " " |
-              replace:"</p>", " " |
-              replace:"</h1>", " " |
-              replace:"</h2>", " " |
-              replace:"</h3>", " " |
-              replace:"</h4>", " " |
-              replace:"</h5>", " " |
-              replace:"</h6>", " "|
-            strip_html | strip_newlines | jsonify }},
-          {%- else -%}
-            {{ doc.content | newline_to_br |
-              replace:"<br />", " " |
-              replace:"</p>", " " |
-              replace:"</h1>", " " |
-              replace:"</h2>", " " |
-              replace:"</h3>", " " |
-              replace:"</h4>", " " |
-              replace:"</h5>", " " |
-              replace:"</h6>", " "|
-            strip_html | strip_newlines | truncatewords: 50 | jsonify }},
-          {%- endif -%}
-        "categories": {{ doc.categories | jsonify }},
-        "tags": {{ doc.tags | jsonify }},
-        "url": {{ doc.url | relative_url | jsonify }},
-        "teaser": {{ teaser | relative_url | jsonify }}
-      }{%- unless forloop.last and l -%},{%- endunless -%}
-    {%- endfor -%}
-  {%- endfor -%}
-  {%- if site.lunr.search_within_pages -%}
-    {%- unless site.collections[0].docs -%},{%- endunless -%}
-    {%- assign pages = site.pages | where_exp:'doc','doc.search != false' | where_exp:'doc','doc.title != null' -%}
-    {%- for doc in pages -%}
-      {%- if forloop.last -%}
-        {%- assign l = true -%}
-      {%- endif -%}
-      {
-        "title": {{ doc.title | jsonify }},
-        "excerpt":
-          {%- if site.search_full_content == true -%}
-            {{ doc.content | newline_to_br |
-              replace:"<br />", " " |
-              replace:"</p>", " " |
-              replace:"</h1>", " " |
-              replace:"</h2>", " " |
-              replace:"</h3>", " " |
-              replace:"</h4>", " " |
-              replace:"</h5>", " " |
-              replace:"</h6>", " "|
-            strip_html | strip_newlines | jsonify }},
-          {%- else -%}
-            {{ doc.content | newline_to_br |
-              replace:"<br />", " " |
-              replace:"</p>", " " |
-              replace:"</h1>", " " |
-              replace:"</h2>", " " |
-              replace:"</h3>", " " |
-              replace:"</h4>", " " |
-              replace:"</h5>", " " |
-              replace:"</h6>", " "|
-            strip_html | strip_newlines | truncatewords: 50 | jsonify }},
-          {%- endif -%}
-        "url": {{ doc.url | absolute_url | jsonify }}
-      }{%- unless forloop.last and l -%},{%- endunless -%}
-    {%- endfor -%}
-  {%- endif -%}
-];
+// JSON 직접 만들기
+window.searchData = {
+  "store": {}
+};
+
+// 각 문서 추가
+{% assign idx = 0 %}
+{% for c in site.collections %}
+  {% assign docs = c.docs | where_exp:'doc','doc.search != false' %}
+  {% for doc in docs %}
+    {% if doc.header.teaser %}
+      {% capture teaser %}{{ doc.header.teaser }}{% endcapture %}
+    {% else %}
+      {% assign teaser = site.teaser %}
+    {% endif %}
+    
+    window.searchData.store[{{ idx }}] = {
+      "title": {{ doc.title | jsonify }},
+      "excerpt": {% if site.search_full_content == true %}{{ doc.content | newline_to_br | replace:"<br />", " " | replace:"</p>", " " | replace:"</h1>", " " | replace:"</h2>", " " | replace:"</h3>", " " | replace:"</h4>", " " | replace:"</h5>", " " | replace:"</h6>", " " | strip_html | strip_newlines | jsonify }}{% else %}{{ doc.content | newline_to_br | replace:"<br />", " " | replace:"</p>", " " | replace:"</h1>", " " | replace:"</h2>", " " | replace:"</h3>", " " | replace:"</h4>", " " | replace:"</h5>", " " | replace:"</h6>", " " | strip_html | strip_newlines | truncatewords: 50 | jsonify }}{% endif %},
+      "categories": {{ doc.categories | jsonify }},
+      "tags": {{ doc.tags | jsonify }},
+      "url": {{ doc.url | relative_url | jsonify }},
+      "teaser": {{ teaser | relative_url | jsonify }}
+    };
+    {% assign idx = idx | plus: 1 %}
+  {% endfor %}
+{% endfor %}
+
+{% if site.lunr.search_within_pages %}
+  {% assign pages = site.pages | where_exp:'doc','doc.search != false' | where_exp:'doc','doc.title != null' %}
+  {% for doc in pages %}
+    window.searchData.store[{{ idx }}] = {
+      "title": {{ doc.title | jsonify }},
+      "excerpt": {% if site.search_full_content == true %}{{ doc.content | newline_to_br | replace:"<br />", " " | replace:"</p>", " " | replace:"</h1>", " " | replace:"</h2>", " " | replace:"</h3>", " " | replace:"</h4>", " " | replace:"</h5>", " " | replace:"</h6>", " " | strip_html | strip_newlines | jsonify }}{% else %}{{ doc.content | newline_to_br | replace:"<br />", " " | replace:"</p>", " " | replace:"</h1>", " " | replace:"</h2>", " " | replace:"</h3>", " " | replace:"</h4>", " " | replace:"</h5>", " " | replace:"</h6>", " " | strip_html | strip_newlines | truncatewords: 50 | jsonify }}{% endif %},
+      "url": {{ doc.url | absolute_url | jsonify }}
+    };
+    {% assign idx = idx | plus: 1 %}
+  {% endfor %}
+{% endif %}
+
+// 배열 형태로 변환
+var tempStore = [];
+for (var key in window.searchData.store) {
+  tempStore.push(window.searchData.store[key]);
+}
+window.searchData.store = tempStore;
+
+// 데이터 로드 확인
+console.log("검색 데이터 로드 완료, 항목 수: " + window.searchData.store.length);
 </script>
 
 <!-- 검색 기능 관련 스크립트 -->
