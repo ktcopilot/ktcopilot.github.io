@@ -25,6 +25,17 @@ layout: default
     {%- assign search_provider = site.search_provider | default: "lunr" -%}
     {%- case search_provider -%}
       {%- when "lunr" -%}
+        <div class="search-options">
+          <label>
+            <input type="radio" name="search-option" value="all" checked> 전체 검색
+          </label>
+          <label>
+            <input type="radio" name="search-option" value="title"> 제목만 검색
+          </label>
+          <label>
+            <input type="radio" name="search-option" value="content"> 내용만 검색
+          </label>
+        </div>
         <input type="text" id="search" class="search-input" placeholder="{{ site.data.ui-text[site.locale].search_placeholder_text | default: 'Enter your search term...' }}" />
         <div id="results" class="results"></div>
       {%- when "google" -%}
