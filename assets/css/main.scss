@@ -252,3 +252,40 @@ search: false
     }
   }
 }
+
+// 검색 옵션 스타일
+.search-options {
+  margin-bottom: 1em;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.search-options label {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 1em;
+  font-size: 0.9em;
+  cursor: pointer;
+}
+
+.search-options input[type="radio"] {
+  margin-right: 0.5em;
+}
+
+.results__found {
+  margin-top: 1.5em;
+  margin-bottom: 1em;
+  font-weight: bold;
+  color: #666;
+}
+
+.no-results {
+  padding: 1.5em;
+  background-color: #f9f9f9;
+  border-radius: 5px;
+  border-left: 5px solid #e74c3c;
+  margin: 1em 0;
+  color: #666;
+  font-style: italic;
+}

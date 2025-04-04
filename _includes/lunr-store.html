@@ -1,13 +1,6 @@
-{% assign lang = site.locale | slice: 0,2 | default: "en" %}
-{% case lang %}
-{% when "gr" %}
-  {% assign lang = "gr" %}
-{% else %}
-  {% assign lang = "en" %}
-{% endcase %}
-<script src="{{ '/assets/js/vendor/jquery/jquery.min.js' | relative_url }}"></script>
-<script src="{{ '/assets/js/lunr/lunr.min.js' | relative_url }}"></script>
-<script>
+---
+layout: none
+---
 var store = [
   {%- for c in site.collections -%}
     {%- if forloop.last -%}
@@ -90,27 +83,4 @@ var store = [
       }{%- unless forloop.last and l -%},{%- endunless -%}
     {%- endfor -%}
   {%- endif -%}
-];
-
-var idx = lunr(function() {
-  this.field('title', {boost: 10});
-  this.field('excerpt');
-  this.field('categories');
-  this.field('tags');
-  this.ref('id');
-
-  this.pipeline.remove(lunr.trimmer);
-
-  for (var i = 0; i < store.length; i++) {
-    var doc = {
-      'title': store[i].title,
-      'excerpt': store[i].excerpt,
-      'categories': store[i].categories,
-      'tags': store[i].tags,
-      'id': i
-    };
-    this.add(doc);
-  }
-});
-</script>
-<script src="{{ '/assets/js/search.js' | relative_url }}"></script>
+]; 

@@ -68,11 +68,11 @@ reCaptcha:
 atom_feed:
   path                   : # blank (default) uses feed.xml
   hide                   : # true, false (default)
-search                   : true
-search_full_content      : true
-search_provider          : lunr
+search                   : true # true, false (default)
+search_full_content      : true # true, false (default)
+search_provider          : lunr # lunr (default), algolia, google
 lunr:
-  search_within_pages    : true
+  search_within_pages    : true # true, false (default)
 algolia:
   application_id         : # YOUR_APPLICATION_ID
   index_name             : # YOUR_INDEX_NAME
@@ -337,6 +337,12 @@ gemini_api:
   endpoint: "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent"
 
 footer_scripts:
+  - /assets/js/vendor/jquery/jquery.min.js
+  - /assets/js/main.min.js
+  - /assets/js/lunr/lunr.min.js
+  - /assets/js/lunr/lunr-store.js
+  - /assets/js/lunr/lunr-en.js
+  - /assets/js/search.js
   - /assets/js/quiz.js
   - /assets/js/tag-filter.js
 
