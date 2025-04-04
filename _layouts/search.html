@@ -15,39 +15,59 @@ layout: default
 <div id="main" role="main">
   {% include sidebar.html %}
 
-  <div class="archive">
+  <div class="archive search-page">
     {% unless page.header.overlay_color or page.header.overlay_image %}
       <h1 id="page-title" class="page__title"{% if page.locale %} lang="{{ page.locale }}"{% endif %}>{{ page.title }}</h1>
     {% endunless %}
 
     {{ content }}
 
-    {%- assign search_provider = site.search_provider | default: "lunr" -%}
-    {%- case search_provider -%}
-      {%- when "lunr" -%}
-        <div class="search-options">
-          <label>
-            <input type="radio" name="search-option" value="all" checked> 전체 검색
-          </label>
-          <label>
-            <input type="radio" name="search-option" value="title"> 제목만 검색
-          </label>
-          <label>
-            <input type="radio" name="search-option" value="content"> 내용만 검색
-          </label>
-        </div>
-        <input type="text" id="search" class="search-input" placeholder="{{ site.data.ui-text[site.locale].search_placeholder_text | default: 'Enter your search term...' }}" />
-        <div id="results" class="results"></div>
-      {%- when "google" -%}
-        <form onsubmit="return googleCustomSearchExecute();" id="cse-search-box-form-id">
-        <input type="text" id="cse-search-input-box-id" class="search-input" placeholder="{{ site.data.ui-text[site.locale].search_placeholder_text | default: 'Enter your search term...' }}" />
-        </form>
-        <div id="results" class="results">
-          <gcse:searchresults-only></gcse:searchresults-only>
-        </div>
-      {%- when "algolia" -%}
-        <div class="search-searchbar"></div>
-        <div class="search-hits"></div>
-    {%- endcase -%}
+    <div class="search-container">
+      {% include search/search_form.html %}
+    </div>
   </div>
 </div>
+
+<style>
+  .search-page {
+    animation: fadeIn 0.5s ease-in-out;
+  }
+  
+  .search-container {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  
+  .list__item {
+    margin-bottom: 2em;
+    padding-bottom: 1em;
+    border-bottom: 1px solid #f2f3f3;
+    animation: slideUp 0.4s ease-out;
+  }
+  
+  .archive__item-title {
+    margin-top: 0;
+    margin-bottom: 0.5em;
+  }
+  
+  .archive__item-excerpt {
+    font-size: 0.9em;
+    color: #40514e;
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  
+  @keyframes slideUp {
+    from { 
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+</style>

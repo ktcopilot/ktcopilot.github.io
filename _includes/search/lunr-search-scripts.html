@@ -5,10 +5,15 @@
 {% else %}
   {% assign lang = "en" %}
 {% endcase %}
+<!-- 검색에 필요한 스크립트 로드 -->
 <script src="{{ '/assets/js/vendor/jquery/jquery.min.js' | relative_url }}"></script>
 <script src="{{ '/assets/js/lunr/lunr.min.js' | relative_url }}"></script>
+
+<!-- 검색 데이터 스토어 생성 -->
 <script>
-var store = [
+// 전역 검색 데이터 객체 초기화
+window.searchData = window.searchData || {};
+window.searchData.store = [
   {%- for c in site.collections -%}
     {%- if forloop.last -%}
       {%- assign l = true -%}
@@ -91,26 +96,8 @@ var store = [
     {%- endfor -%}
   {%- endif -%}
 ];
-
-var idx = lunr(function() {
-  this.field('title', {boost: 10});
-  this.field('excerpt');
-  this.field('categories');
-  this.field('tags');
-  this.ref('id');
-
-  this.pipeline.remove(lunr.trimmer);
-
-  for (var i = 0; i < store.length; i++) {
-    var doc = {
-      'title': store[i].title,
-      'excerpt': store[i].excerpt,
-      'categories': store[i].categories,
-      'tags': store[i].tags,
-      'id': i
-    };
-    this.add(doc);
-  }
-});
 </script>
+
+<!-- 검색 기능 관련 스크립트 -->
+<script src="{{ '/assets/js/lunr/lunr-en.js' | relative_url }}"></script>
 <script src="{{ '/assets/js/search.js' | relative_url }}"></script>

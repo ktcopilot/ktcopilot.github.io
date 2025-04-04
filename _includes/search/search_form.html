@@ -2,31 +2,27 @@
   {%- assign search_provider = site.search_provider | default: "lunr" -%}
   {%- case search_provider -%}
   {%- when "lunr" -%}
-  <form class="search-content__form" onsubmit="return searchExecute();" role="search">
+  <form class="search-content__form" onsubmit="$('#search').trigger('keyup'); return false;" role="search">
     <label class="sr-only" for="search">
       {{ site.data.ui-text[site.locale].search_label_text | default: 'Enter your search term...' }}
     </label>
-    <input type="search" id="search" class="search-input" tabindex="-1" placeholder="{{ site.data.ui-text[site.locale].search_placeholder_text | default: 'Enter your search term...' }}" />
+    <div class="search-wrapper">
+      <input type="search" id="search" class="search-input" tabindex="-1" placeholder="{{ site.data.ui-text[site.locale].search_placeholder_text | default: '검색어를 입력하세요...' }}" />
+      <button type="submit" class="search-submit"><i class="fas fa-search" aria-hidden="true"></i><span class="sr-only">검색</span></button>
+    </div>
+    
+    <div class="search-options">
+      <label><input type="radio" name="search-option" value="all" checked> 전체</label>
+      <label><input type="radio" name="search-option" value="title"> 제목</label>
+      <label><input type="radio" name="search-option" value="content"> 내용</label>
+    </div>
   </form>
-  <div id="results" class="results"></div>
-  <script>
-  function searchExecute() {
-    var searchInput = document.getElementById('search');
-    var query = searchInput.value.toLowerCase();
-    if(query.length > 0) {
-      // jQuery를 사용할 수 있다면 jQuery 방식으로 트리거
-      if(typeof $ !== 'undefined') {
-        $(searchInput).trigger('keyup');
-      } else {
-        // jQuery가 없다면 네이티브 이벤트 발생
-        var event = new Event('keyup');
-        searchInput.dispatchEvent(event);
-      }
-    }
-    // false를 반환하여 폼 제출 시 페이지 새로고침 방지
-    return false;
-  }
-  </script>
+  <div id="results" class="results">
+    <div class="search-initial-message">
+      <p>검색어를 입력하면 결과가 여기에 표시됩니다.</p>
+      <p><small>검색 인덱스가 로드되는 데 약간의 시간이 필요할 수 있습니다.</small></p>
+    </div>
+  </div>
   {%- when "google" -%}
   <form onsubmit="return googleCustomSearchExecute();" id="cse-search-box-form-id" role="search">
     <label class="sr-only" for="cse-search-input-box-id">
@@ -42,3 +38,94 @@
   <div class="search-hits"></div>
   {%- endcase -%}
 </div>
+
+<style>
+  .search-wrapper {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 1em;
+  }
+  
+  .search-input {
+    flex: 1;
+    height: 2.5em;
+    padding: 0 0.5em;
+    border-radius: 4px 0 0 4px;
+    border: 1px solid #d9d9d9;
+  }
+  
+  .search-submit {
+    height: 2.5em;
+    padding: 0 0.8em;
+    background: #4285f4;
+    color: white;
+    border: none;
+    border-radius: 0 4px 4px 0;
+    cursor: pointer;
+  }
+  
+  .search-submit:hover {
+    background: #3367d6;
+  }
+  
+  .search-options {
+    display: flex;
+    gap: 1em;
+    margin-bottom: 1.5em;
+  }
+  
+  .search-options label {
+    display: flex;
+    align-items: center;
+    gap: 0.3em;
+    cursor: pointer;
+  }
+  
+  .results__found {
+    margin-bottom: 1em;
+    font-weight: bold;
+  }
+  
+  .no-results {
+    color: #666;
+    font-style: italic;
+  }
+  
+  .search-initial-message {
+    padding: 1em;
+    text-align: center;
+    color: #666;
+    background-color: #f9f9f9;
+    border-radius: 4px;
+  }
+  
+  /* 검색 결과 하이라이트 스타일 */
+  .archive__item-excerpt mark {
+    background-color: #ffffd0;
+    padding: 0 2px;
+    border-radius: 2px;
+    font-weight: bold;
+  }
+  
+  /* 검색 결과 애니메이션 */
+  .list__item {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeInUp 0.3s ease forwards;
+  }
+  
+  @keyframes fadeInUp {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  /* 검색 결과 지연 애니메이션 */
+  .list__item:nth-child(2) { animation-delay: 0.1s; }
+  .list__item:nth-child(3) { animation-delay: 0.2s; }
+  .list__item:nth-child(4) { animation-delay: 0.3s; }
+  .list__item:nth-child(5) { animation-delay: 0.4s; }
+  .list__item:nth-child(n+6) { animation-delay: 0.5s; }
+</style>

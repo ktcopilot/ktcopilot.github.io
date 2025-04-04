@@ -136,6 +136,110 @@ search: false
       color: #666;
     }
   }
+  
+  .page__title {
+    margin-bottom: 1.5em;
+    text-align: center;
+    color: $primary-color;
+  }
+  
+  .search-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1em;
+    margin-bottom: 1.5em;
+    justify-content: center;
+    
+    label {
+      display: flex;
+      align-items: center;
+      gap: 0.3em;
+      cursor: pointer;
+      font-size: $type-size-6;
+    }
+  }
+}
+
+// 검색 컨텐츠 스타일 개선
+.search-content {
+  .search-input {
+    font-family: $sans-serif;
+    border: 1px solid $border-color;
+    border-radius: $border-radius;
+    box-shadow: $box-shadow;
+    
+    &:focus {
+      border-color: $primary-color;
+      box-shadow: 0 0 5px rgba($primary-color, 0.5);
+    }
+  }
+  
+  .results {
+    margin-top: 1em;
+    
+    .results__found {
+      color: $text-color;
+      font-weight: bold;
+      margin-bottom: 1em;
+    }
+    
+    .list__item {
+      margin-bottom: 1.5em;
+      padding-bottom: 1em;
+      border-bottom: 1px solid $border-color;
+      transition: transform 0.3s ease;
+      
+      &:hover {
+        transform: translateX(5px);
+      }
+      
+      .archive__item-title {
+        margin-top: 0;
+        font-size: $type-size-5;
+        
+        a {
+          text-decoration: none;
+          color: $link-color;
+          
+          &:hover {
+            color: $link-color-hover;
+            text-decoration: underline;
+          }
+        }
+      }
+      
+      .archive__item-excerpt {
+        margin-top: 0.5em;
+        font-size: $type-size-6;
+        color: $text-color;
+      }
+    }
+    
+    .no-results {
+      padding: 1em;
+      text-align: center;
+      font-style: italic;
+      color: mix($text-color, $background-color, 60%);
+    }
+  }
+}
+
+// 반응형 스타일 조정
+@media (max-width: 600px) {
+  .search-options {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .search-wrapper {
+    flex-direction: column;
+  }
+  
+  .search-input, .search-submit {
+    width: 100%;
+    border-radius: $border-radius;
+    margin-bottom: 0.5em;
+  }
 }
 
 // 활성 태그 스타일
@@ -145,6 +249,7 @@ search: false
   text-decoration: underline;
 }
 
+// 이하 퀴즈 스타일
 .quiz-wrapper {
   max-width: 800px;
   margin: 0 auto;
@@ -246,10 +351,6 @@ search: false
       list-style: none;
       padding: 0;
     }
-  
-    li {
-      margin: 0.5em 0;
-    }
   }
 }
 
@@ -288,4 +389,11 @@ search: false
   margin: 1em 0;
   color: #666;
   font-style: italic;
+}
+
+// 네비게이션 검색 폼 스타일 추가
+.greedy-nav {
+  .nav-search-form {
+    margin-left: 1em;
+  }
 }
